@@ -1,23 +1,35 @@
-from schemas.financial_input import FinancialInput
-from schemas.economics_input import UnitEconomicsInput
-from tools.financial_trends import FinancialTrendAnalyzer
-from tools.unit_economics import UnitEconomicsEngine
+from agent.workflow import build_graph
 
-financial_data = FinancialInput(
-    monthly_revenue=[100,110,120,130,140,150,160,170,180,190,200,210],
-    monthly_burn=[80,85,90,95,100,105,110,115,120,125,130,135],
-    cash_on_hand=500
-)
+# Combine all startup data into ONE dictionary
+startup_data = {
+    "monthly_revenue": [100,110,120,130,140,150,160,170,180,190,200,210],
+    "monthly_burn": [80,85,90,95,100,105,110,115,120,125,130,135],
+    "cash_on_hand": 500,
+    "ltv": 900,
+    "cac": 300,
+    "gross_margin": 60,
+    "monthly_new_customers": 50
+}
 
-financial_tool = FinancialTrendAnalyzer()
-print("Financial Analysis:", financial_tool.analyze(financial_data))
+graph = build_graph()
 
-economics_data = UnitEconomicsInput(
-    ltv=900,
-    cac=300,
-    gross_margin=60,
-    monthly_new_customers=50
-)
+initial_state = {
+    "startup_data": startup_data,
+    "financial_result": None,
+    "unit_result": None,
+    "final_score": None,
+    "decision": None
+}
 
-economics_tool = UnitEconomicsEngine()
-print("Unit Economics:", economics_tool.analyze(economics_data))
+result = graph.invoke(initial_state)
+
+print("\n--- FINAL DECISION ENGINE OUTPUT ---")
+print("Final Score:", result["final_score"])
+print("Decision:", result["decision"])
+
+if result["decision"] == "REJECT":
+    print("Reason: Low runway or unstable financial metrics.")
+elif result["decision"] == "REVIEW":
+    print("Reason: Moderate financial health, needs further analysis.")
+else:
+    print("Reason: Strong financial and unit economics performance.")
