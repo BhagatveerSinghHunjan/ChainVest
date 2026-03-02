@@ -36,4 +36,13 @@ def build_graph():
     builder.add_edge("financial", "unit")
     builder.add_edge("unit", "aggregate")
 
-    return builder.compile()
+    graph = builder.compile()
+
+    # Create visual graph using Mermaid (no build tools needed)
+    graph.get_graph().draw_mermaid_png(output_file_path="workflow.png")
+   
+
+    return graph
+if __name__ == "__main__":
+    build_graph()
+    print("Workflow graph generated successfully!")
