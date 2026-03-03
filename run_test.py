@@ -81,4 +81,12 @@ print("\nReason:")
 for r in reasons:
     print(f"  • {r}")
 
+print("\nBlockchain Logs:")
+for log in result["logs"]:
+    print(f"  • {log}")
+
+print("\nTransaction Hashes:")
+for tx in result["tx_hashes"]:
+    print(f"  • {tx}")    
+
 print("\n==============================================\n")
