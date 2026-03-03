@@ -25,7 +25,12 @@ initial_state = {
     "financial_result": None,
     "unit_result": None,
     "final_score": None,
-    "decision": None
+    "decision": None,
+    "logs":[],
+    "tx_hashes":[],
+    "next_action":None,
+    "terminated":False
+
 }
 
 result = graph.invoke(initial_state)
