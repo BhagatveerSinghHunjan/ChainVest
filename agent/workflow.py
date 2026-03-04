@@ -80,6 +80,10 @@ def build_graph():
 
 # --------------------------------------------------
 # Run directly (optional)
+
+def run_agent(input_data):
+    print("Agent running with:", input_data)
+    return "Agent executed"
 # --------------------------------------------------
 if __name__ == "__main__":
     build_graph()
