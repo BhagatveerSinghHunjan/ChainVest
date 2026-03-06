@@ -1,4 +1,4 @@
-ChainVest
+ChainVest24
 
 Blockchain-Verified AI Financial Due Diligence Engine
 
