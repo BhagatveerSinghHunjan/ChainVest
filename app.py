@@ -70,23 +70,27 @@ if st.button("🚀 Run ChainVest Analysis"):
 
         with st.spinner("Running AI agent workflow..."):
 
-            # Create state object expected by run_agent()
+            # State for workflow
             state = {
                 "mode": mode,
-                "revenue": revenue,
-                "burn": burn,
-                "cash": cash,
-                "tool_results": {},
+                "startup_data": {
+                    "monthly_revenue": [revenue],
+                    "monthly_burn": [burn],
+                    "cash_on_hand": cash
+                },
+                "financial_result": None,
+                "unit_result": None,
+                "risk_scores": {},
+                "llm_explanation": None,
                 "logs": [],
                 "tx_hashes": [],
-                "decision": None
+                "decision": None,
+                "finished": False
             }
 
-            # Run agent workflow
             result = run_agent(state)
 
         st.success("Analysis Complete")
-
         st.divider()
 
         # ------------------------------------
@@ -97,10 +101,9 @@ if st.button("🚀 Run ChainVest Analysis"):
 
         st.write("Decision:", result.get("decision", "N/A"))
 
-        # Show runway if financial tool exists
-        if "financial" in result.get("tool_results", {}):
-            runway = result["tool_results"]["financial"].get("runway", None)
-            if runway is not None:
+        if "financial_result" in result and result["financial_result"]:
+            runway = result["financial_result"].get("runway")
+            if runway:
                 st.write("Runway (months):", round(runway, 2))
 
         st.divider()
@@ -111,9 +114,8 @@ if st.button("🚀 Run ChainVest Analysis"):
 
         st.subheader("🧾 Agent Execution Logs")
 
-        if "logs" in result:
-            for log in result["logs"]:
-                st.write(f"• {log}")
+        for log in result.get("logs", []):
+            st.write(f"• {log}")
 
         st.divider()
 
@@ -123,14 +125,39 @@ if st.button("🚀 Run ChainVest Analysis"):
 
         st.subheader("🔗 Blockchain Transaction Hashes")
 
-        if "tx_hashes" in result:
-            for tx in result["tx_hashes"]:
-                st.code(tx)
+        for tx in result.get("tx_hashes", []):
+            st.code(tx)
 
         st.divider()
 
         # ------------------------------------
-        # Debug Tool Results (Optional)
+        # LLM Explanation (Stage 4)
+        # ------------------------------------
+
+        st.subheader("🤖 AI Explanation")
+
+        explanation = result.get("llm_explanation")
+
+        if explanation:
+
+            st.write("### Summary")
+            st.write(explanation.get("summary", "N/A"))
+
+            st.write("### Strengths")
+            for s in explanation.get("strengths", []):
+                st.write(f"• {s}")
+
+            st.write("### Weaknesses")
+            for w in explanation.get("weaknesses", []):
+                st.write(f"• {w}")
+
+            st.write("### Final Explanation")
+            st.write(explanation.get("final_explanation", "N/A"))
+
+        st.divider()
+
+        # ------------------------------------
+        # Debug Tool Results
         # ------------------------------------
 
         with st.expander("🔍 Detailed Tool Results"):

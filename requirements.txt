@@ -1,0 +1,7 @@
+langgraph
+langchain
+pydantic
+openai
+streamlit
+python-dotenv
+matplotlib
