@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, END
 from agent.state import AgentState
 from agent.aggregator import aggregate_results
-from blockchain.logger import log_step
+from blockchain.logger import log_to_chain
 from agent.llm_reasoning import llm_reasoning_node
 
 from tools.financial_trends import FinancialTrendAnalyzer
@@ -15,7 +15,7 @@ from schemas.economics_input import UnitEconomicsInput
 # --------------------------------------------------
 def financial_node(state: AgentState):
 
-    state = log_step(state, "Financial Analysis Started")
+    state = log_to_chain(state, "Financial Analysis Started")
 
     analyzer = FinancialTrendAnalyzer()
     financial_input = FinancialInput(**state["startup_data"])
@@ -23,7 +23,7 @@ def financial_node(state: AgentState):
 
     state["financial_result"] = result
 
-    state = log_step(state, "Financial Analysis Completed")
+    state = log_to_chain(state, "Financial Analysis Completed")
 
     return state
 
@@ -33,7 +33,7 @@ def financial_node(state: AgentState):
 # --------------------------------------------------
 def unit_node(state: AgentState):
 
-    state = log_step(state, "Unit Economics Analysis Started")
+    state = log_to_chain(state, "Unit Economics Analysis Started")
 
     engine = UnitEconomicsEngine()
     unit_input = UnitEconomicsInput(**state["startup_data"])
@@ -41,7 +41,7 @@ def unit_node(state: AgentState):
 
     state["unit_result"] = result
 
-    state = log_step(state, "Unit Economics Analysis Completed")
+    state = log_to_chain(state, "Unit Economics Analysis Completed")
 
     return state
 
@@ -51,7 +51,7 @@ def unit_node(state: AgentState):
 # --------------------------------------------------
 def final_node(state: AgentState):
 
-    state = log_step(state, "Final Decision Generated")
+    state = log_to_chain(state, "Final Decision Generated")
 
     state["finished"] = True
     return state

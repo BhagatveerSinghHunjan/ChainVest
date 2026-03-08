@@ -1,6 +1,6 @@
 import json
 import os
-from blockchain.logger import log_step
+from blockchain.logger import log_to_chain
 
 # Only import OpenAI if key exists
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
@@ -34,7 +34,11 @@ def llm_reasoning_node(state):
         state["market_risk"] = mock_output["market_risk_score"]
         state["founder_risk"] = mock_output["founder_risk_score"]
 
-        state = log_step(state, "Mock LLM Reasoning Used")
+        state = log_to_chain(
+            state,
+            "Mock LLM Reasoning Used",
+             output_data=mock_output
+        )
 
         return state
 
@@ -73,6 +77,10 @@ DATA:
 
     state["llm_explanation"] = parsed
 
-    state = log_step(state, "Real LLM Reasoning Executed")
+    state = log_to_chain(
+    state,
+    "Mock LLM Reasoning Used",
+    output_data=mock_output
+    )
 
     return state
