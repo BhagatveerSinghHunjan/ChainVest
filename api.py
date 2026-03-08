@@ -26,7 +26,7 @@ class InputSchema(BaseModel):
     cash: float
 
 
-# ✅ Root test route (so "/" not empty)
+# ✅ Root route (so "/" not empty)
 @app.get("/")
 def root():
     return {"status": "ChainVest API running"}
@@ -39,13 +39,22 @@ def analyze(data: InputSchema):
         print("\n===== NEW REQUEST =====")
         print("INPUT:", data)
 
-        # ✅ Convert API input → agent format
-        result = run_agent(
-    data.mode,
-    [data.revenue] * 12,
-    [data.burn] * 12,
-    data.cash,
-)
+        # ✅ Build state EXACTLY like your workflow expects
+        state = {
+            "mode": data.mode,
+            "revenue": [data.revenue] * 12,
+            "burn": [data.burn] * 12,
+            "cash": data.cash,
+            "tool_results": {},
+            "decision": None,
+            "finished": False,
+            "next_step": None,
+            "logs": [],
+            "tx_hashes": []
+        }
+
+        # ✅ Run agent (correct way)
+        result = run_agent(state)
 
         print("RESULT:", result)
 
