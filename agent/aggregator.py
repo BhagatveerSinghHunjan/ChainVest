@@ -32,6 +32,16 @@ def aggregate_results(state):
     state["final_score"] = round(final_score, 3)
     state["decision"] = decision
 
+    # Expose detailed risk scores for both the LLM node and the frontend
+    state["risk_scores"] = {
+        "growth_score": round(growth_score, 3),
+        "runway_score": round(runway_score, 3),
+        "volatility_score": round(volatility_score, 3),
+        "financial_score": round(financial_score, 3),
+        "unit_score": round(unit_score, 3),
+        "overall_score": round(final_score, 3),
+    }
+
     # Log decision
     state = log_step(state, "Final Decision Generated")
 

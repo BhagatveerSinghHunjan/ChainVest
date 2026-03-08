@@ -1,24 +1,20 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
 
-# ✅ import your agent controller
 from agent.workflow import run_agent
 
 app = FastAPI()
 
-
-# ✅ VERY IMPORTANT (for Next.js later)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # later restrict in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# ✅ Request schema
 class InputSchema(BaseModel):
     mode: str
     revenue: float
@@ -26,45 +22,62 @@ class InputSchema(BaseModel):
     cash: float
 
 
-# ✅ Root route (so "/" not empty)
-@app.get("/")
-def root():
-    return {"status": "ChainVest API running"}
+class FinancialResult(BaseModel):
+    avg_mom_growth: float
+    avg_burn_growth: float
+    revenue_volatility: float
+    runway_months: float
 
 
-# ✅ MAIN ENDPOINT
-@app.post("/analyze")
-def analyze(data: InputSchema):
-    try:
-        print("\n===== NEW REQUEST =====")
-        print("INPUT:", data)
+class UnitResult(BaseModel):
+    ltv_cac_ratio: float
+    payback_period_months: float
+    contribution_margin: float
+    sustainability_score: int
 
-        # ✅ Build state EXACTLY like your workflow expects
-        state = {
-            "mode": data.mode,
-            "revenue": [data.revenue] * 12,
-            "burn": [data.burn] * 12,
-            "cash": data.cash,
-            "tool_results": {},
-            "decision": None,
-            "finished": False,
-            "next_step": None,
-            "logs": [],
-            "tx_hashes": []
-        }
 
-        # ✅ Run agent (correct way)
-        result = run_agent(state)
+class RiskScores(BaseModel):
+    growth_score: float
+    runway_score: float
+    volatility_score: float
+    financial_score: float
+    unit_score: float
+    overall_score: float
 
-        print("RESULT:", result)
 
-        return result
+class LLMExplanation(BaseModel):
+    market_risk_score: int
+    founder_risk_score: int
+    summary: str
+    strengths: List[str]
+    weaknesses: List[str]
+    final_explanation: str
 
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
 
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+class AnalysisResponse(BaseModel):
+    mode: str
+    decision: str
+    final_score: float
+    reasons: List[str]
+    financial_result: FinancialResult
+    unit_result: UnitResult
+    risk_scores: Optional[RiskScores] = None
+    llm_explanation: Optional[LLMExplanation] = None
+    logs: List[str]
+    tx_hashes: List[str]
+
+@app.post("/analyze", response_model=AnalysisResponse)
+def analyze(data: InputSchema) -> AnalysisResponse:
+
+    print("\n===== NEW REQUEST =====")
+
+    result = run_agent(
+        data.mode,
+        [data.revenue]*12,
+        [data.burn]*12,
+        data.cash
+    )
+
+    print("RESULT:", result)
+
+    return result   # ✅ THIS LINE FIXES EVERYTHING
