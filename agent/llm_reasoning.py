@@ -77,10 +77,6 @@ DATA:
 
     state["llm_explanation"] = parsed
 
-    state = log_to_chain(
-    state,
-    "Mock LLM Reasoning Used",
-    output_data=mock_output
-    )
+    
 
     return state

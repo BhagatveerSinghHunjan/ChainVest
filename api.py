@@ -7,6 +7,9 @@ from agent.workflow import run_agent
 
 app = FastAPI()
 
+# -----------------------------
+# CORS (Frontend Connection)
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,6 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -----------------------------
+# INPUT SCHEMA
+# -----------------------------
 class InputSchema(BaseModel):
     mode: str
     revenue: float
@@ -22,6 +28,9 @@ class InputSchema(BaseModel):
     cash: float
 
 
+# -----------------------------
+# OUTPUT SCHEMAS
+# -----------------------------
 class FinancialResult(BaseModel):
     avg_mom_growth: float
     avg_burn_growth: float
@@ -66,18 +75,54 @@ class AnalysisResponse(BaseModel):
     logs: List[str]
     tx_hashes: List[str]
 
+
+# -----------------------------
+# API ROUTE
+# -----------------------------
 @app.post("/analyze", response_model=AnalysisResponse)
 def analyze(data: InputSchema) -> AnalysisResponse:
 
     print("\n===== NEW REQUEST =====")
 
+    # Run agent
     result = run_agent(
         data.mode,
-        [data.revenue]*12,
-        [data.burn]*12,
+        [data.revenue] * 12,
+        [data.burn] * 12,
         data.cash
     )
 
     print("RESULT:", result)
 
-    return result   # ✅ THIS LINE FIXES EVERYTHING
+    # -----------------------------
+    # FIX LOGS → dict → string
+    # -----------------------------
+    formatted_logs = []
+    for log in result.get("logs", []):
+        ts = log.get("timestamp")
+        step = log.get("step")
+        tx = log.get("tx_hash")
+        formatted_logs.append(f"{ts} | {step} | {tx}")
+
+    # -----------------------------
+    # FIX REASONS
+    # -----------------------------
+    reasons = result.get("reasons")
+    if not reasons:
+        reasons = ["Auto-generated result"]
+
+    # -----------------------------
+    # FINAL RESPONSE
+    # -----------------------------
+    return {
+        "mode": result["mode"],
+        "decision": result["decision"],
+        "final_score": result["final_score"],
+        "reasons": reasons,
+        "financial_result": result["financial_result"],
+        "unit_result": result["unit_result"],
+        "risk_scores": result.get("risk_scores"),
+        "llm_explanation": result.get("llm_explanation"),
+        "logs": formatted_logs,
+        "tx_hashes": result.get("tx_hashes", []),
+    }

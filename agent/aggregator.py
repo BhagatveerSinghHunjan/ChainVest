@@ -4,7 +4,7 @@ from blockchain.logger import log_to_chain
 def aggregate_results(state):
 
     # Log start
-    state = log_to_chain(state, "Aggregation Started")
+    
 
     financial = state["financial_result"]
     unit = state["unit_result"]
@@ -41,15 +41,6 @@ def aggregate_results(state):
         "unit_score": round(unit_score, 3),
         "overall_score": round(final_score, 3),
     }
-
-    # Log decision
-    
-    
-    state = log_to_chain(
-    state,
-    "Aggregation Completed",
-    output_data=state["risk_scores"]
-    )
     state["terminated"] = True
 
     return state
