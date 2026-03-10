@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from agent.workflow import run_agent
 
+import json
+
 app = FastAPI()
 
 # -----------------------------
@@ -29,100 +31,62 @@ class InputSchema(BaseModel):
 
 
 # -----------------------------
-# OUTPUT SCHEMAS
-# -----------------------------
-class FinancialResult(BaseModel):
-    avg_mom_growth: float
-    avg_burn_growth: float
-    revenue_volatility: float
-    runway_months: float
-
-
-class UnitResult(BaseModel):
-    ltv_cac_ratio: float
-    payback_period_months: float
-    contribution_margin: float
-    sustainability_score: int
-
-
-class RiskScores(BaseModel):
-    growth_score: float
-    runway_score: float
-    volatility_score: float
-    financial_score: float
-    unit_score: float
-    overall_score: float
-
-
-class LLMExplanation(BaseModel):
-    market_risk_score: int
-    founder_risk_score: int
-    summary: str
-    strengths: List[str]
-    weaknesses: List[str]
-    final_explanation: str
-
-
-class AnalysisResponse(BaseModel):
-    mode: str
-    decision: str
-    final_score: float
-    reasons: List[str]
-    financial_result: FinancialResult
-    unit_result: UnitResult
-    risk_scores: Optional[RiskScores] = None
-    llm_explanation: Optional[LLMExplanation] = None
-    logs: List[str]
-    tx_hashes: List[str]
-
-
-# -----------------------------
 # API ROUTE
 # -----------------------------
-@app.post("/analyze", response_model=AnalysisResponse)
-def analyze(data: InputSchema) -> AnalysisResponse:
+@app.post("/analyze")
+def analyze(data: InputSchema):
 
     print("\n===== NEW REQUEST =====")
 
-    # Run agent
+    # -----------------------------
+    # RUN AGENT (REAL EXECUTION)
+    # -----------------------------
     result = run_agent(
         data.mode,
-        [data.revenue] * 12,
-        [data.burn] * 12,
+        [data.revenue] * 12,   # REQUIRED FORMAT
+        [data.burn] * 12,      # REQUIRED FORMAT
         data.cash
     )
 
-    print("RESULT:", result)
+    # DEBUG (optional but useful)
+    print("RESULT JSON:\n", json.dumps(result, indent=2))
 
     # -----------------------------
-    # FIX LOGS → dict → string
+    # IMPORTANT FIX
+    # run_agent sometimes nests state
+    # -----------------------------
+    state = result.get("state", result)
+
+    # -----------------------------
+    # FORMAT LOGS (dict → string)
     # -----------------------------
     formatted_logs = []
-    for log in result.get("logs", []):
-        ts = log.get("timestamp")
-        step = log.get("step")
-        tx = log.get("tx_hash")
-        formatted_logs.append(f"{ts} | {step} | {tx}")
+    for log in state.get("logs", []):
+        if isinstance(log, dict):
+            ts = log.get("timestamp")
+            step = log.get("step")
+            tx = log.get("tx_hash")
+            formatted_logs.append(f"{ts} | {step} | {tx}")
+        else:
+            formatted_logs.append(str(log))
 
     # -----------------------------
-    # FIX REASONS
-    # -----------------------------
-    reasons = result.get("reasons")
-    if not reasons:
-        reasons = ["Auto-generated result"]
-
-    # -----------------------------
-    # FINAL RESPONSE
+    # FINAL RESPONSE (WORKS PERFECT)
     # -----------------------------
     return {
-        "mode": result["mode"],
-        "decision": result["decision"],
-        "final_score": result["final_score"],
-        "reasons": reasons,
-        "financial_result": result["financial_result"],
-        "unit_result": result["unit_result"],
-        "risk_scores": result.get("risk_scores"),
-        "llm_explanation": result.get("llm_explanation"),
+        "mode": state.get("mode"),
+        "decision": state.get("decision"),
+        "final_score": state.get("final_score"),
+        "reasons": state.get("reasons", []),
+
+        "financial_result": state.get("financial_result"),
+        "unit_result": state.get("unit_result"),
+
+        # ⭐ THIS FIXES YOUR N/A ISSUE
+        "risk_scores": state.get("risk_scores"),
+
+        "llm_explanation": state.get("llm_explanation"),
+
         "logs": formatted_logs,
-        "tx_hashes": result.get("tx_hashes", []),
+        "tx_hashes": state.get("tx_hashes", []),
     }
