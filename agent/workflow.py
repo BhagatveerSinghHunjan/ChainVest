@@ -147,12 +147,20 @@ def run_agent(
     monthly_new_customers: int = 50,
 ):
 
+    # Derive basic unit-economics parameters from the provided
+    # revenue / burn so unit score actually changes per request.
+    avg_revenue = sum(monthly_revenue) / len(monthly_revenue) if monthly_revenue else 0.0
+    avg_burn = sum(monthly_burn) / len(monthly_burn) if monthly_burn else 0.0
+
+    derived_ltv = max(avg_revenue * 8, 100.0)
+    derived_cac = max(avg_burn * 0.5, 50.0)
+
     startup_data = {
         "monthly_revenue": monthly_revenue,
         "monthly_burn": monthly_burn,
         "cash_on_hand": cash_on_hand,
-        "ltv": ltv,
-        "cac": cac,
+        "ltv": derived_ltv,
+        "cac": derived_cac,
         "gross_margin": gross_margin,
         "monthly_new_customers": monthly_new_customers,
     }

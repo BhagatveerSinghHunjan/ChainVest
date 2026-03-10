@@ -11,20 +11,30 @@ def aggregate_results(state):
 
     # ---- Financial Scoring ----
     growth_score = max(min(financial["avg_mom_growth"], 1), 0)
-    runway_score = min(financial["runway_months"] / 24, 1)
+    runway_score = min(financial["runway_months"] / 18, 1)
     volatility_score = 1 / (1 + financial["revenue_volatility"])
 
-    financial_score = (growth_score + runway_score + volatility_score) / 3
+    # Base financial score (raw, un-normalized)
+    financial_score_raw = (growth_score + runway_score + volatility_score) / 3
+
+    # Normalize financial score into 0–1 based on expected range
+    # so the frontend always sees values between 0 and 1.
+    financial_score = max(min(financial_score_raw / 0.667, 1), 0)
 
     # ---- Unit Economics Scoring ----
     unit_score = unit["sustainability_score"] / 100
 
     # ---- Final Weighted Score ----
-    final_score = (0.6 * financial_score) + (0.4 * unit_score)
+    # Base final score (raw, un-normalized)
+    final_score_raw = (0.6 * financial_score_raw) + (0.4 * unit_score)
 
-    if final_score > 0.75:
+    # Normalize final score into 0–1 (rough cap ~0.74 in current setup)
+    final_score = max(min(final_score_raw / 0.74, 1), 0)
+
+    # Decision bands on normalized 0–1 scale
+    if final_score >= 0.75:
         decision = "APPROVE"
-    elif final_score > 0.5:
+    elif final_score >= 0.5:
         decision = "REVIEW"
     else:
         decision = "REJECT"
