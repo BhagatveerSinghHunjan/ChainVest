@@ -4,6 +4,7 @@ from agent.aggregator import aggregate_results
 from blockchain.logger import log_to_chain
 from agent.llm_reasoning import llm_reasoning_node
 from audit.auditor import audit_step
+from weil_mcp.chainvest_mcp import evaluate_startup
 
 from tools.financial_trends import FinancialTrendAnalyzer
 from tools.unit_economics import UnitEconomicsEngine
@@ -24,15 +25,31 @@ def financial_node(state: AgentState):
 
     state["financial_result"] = result
 
+
+    # =========================
+    # 🔥 MCP INTEGRATION (ADD THIS)
+    # =========================
+    latest_revenue = state["startup_data"]["monthly_revenue"][-1]
+    latest_burn = state["startup_data"]["monthly_burn"][-1]
+    cash = state["startup_data"]["cash_on_hand"]
+
+    from weil_mcp.chainvest_mcp import evaluate_startup
+
+    mcp_result = evaluate_startup(latest_revenue, latest_burn, cash)
+
+    state["mcp_result"] = mcp_result
+    # =========================
+
+
     state = log_to_chain(
         state,
         "Financial Analysis Completed",
         output_data=result
     )
+
     state = audit_step(state, "Financial Analysis Completed")
 
     return state
-
 
 # --------------------------------------------------
 # Unit Economics Node

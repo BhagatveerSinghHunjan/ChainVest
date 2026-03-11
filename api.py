@@ -150,4 +150,7 @@ def analyze(data: InputSchema):
 
         "logs": formatted_logs,
         "tx_hashes": state.get("tx_hashes", []),
+        "mcp_result": state.get("mcp_result"),
+        "mcp_result": state.get("mcp_result"),
+        "tx_hashes": state.get("tx_hashes"),
     }

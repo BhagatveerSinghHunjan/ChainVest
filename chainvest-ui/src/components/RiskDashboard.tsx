@@ -4,6 +4,7 @@ export default function RiskDashboard({ result }: Props) {
   if (!result) return null;
 
   const scores = result.risk_scores || {};
+  const mcp = result.mcp_result || null;
 
   const Card = ({ title, value }: any) => (
     <div className="p-4 rounded-lg border border-gray-200 bg-white">
@@ -29,11 +30,25 @@ export default function RiskDashboard({ result }: Props) {
       </div>
 
       {/* SECOND ROW */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
         <Card title="Growth Score" value={scores.growth_score} />
         <Card title="Runway Score" value={scores.runway_score} />
         <Card title="Volatility Score" value={scores.volatility_score} />
       </div>
+
+      {/* 🔥 MCP SECTION */}
+      {mcp && (
+        <div className="mt-6 p-4 rounded-lg border border-indigo-200 bg-indigo-50">
+          <h3 className="text-md font-semibold text-indigo-900 mb-2">
+            Weil MCP Structured Evaluation
+          </h3>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Card title="MCP Decision" value={mcp.decision} />
+            <Card title="MCP Score" value={mcp.score} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

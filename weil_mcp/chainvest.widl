@@ -1,0 +1,16 @@
+service ChainVestMCP {
+
+  operation evaluateStartup {
+    input {
+      revenue: float
+      burn: float
+      cash: float
+    }
+
+    output {
+      decision: string
+      score: float
+    }
+  }
+
+}
