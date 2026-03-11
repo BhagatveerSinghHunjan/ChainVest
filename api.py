@@ -123,4 +123,9 @@ def analyze(data: InputSchema):
         "logs": _format_logs(state.get("logs", [])),
         "tx_hashes": state.get("tx_hashes", []),
         "audit_logs": state.get("audit_logs", []),
+        "planner_history": state.get("planner_history", []),
+        "tool_history": state.get("tool_history", []),
+        "onchain_audit": state.get("onchain_audit", []),
+        "termination_reason": state.get("termination_reason"),
+        "iteration_count": state.get("iteration_count"),
     }

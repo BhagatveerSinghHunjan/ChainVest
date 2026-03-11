@@ -18,13 +18,20 @@ class AgentState(TypedDict):
     # Final Output
     decision: Optional[str]
     llm_explanation: Optional[Dict]
+    llm_trace: Optional[Dict]
 
     # Audit + execution traces
     logs: List[Dict]
     tx_hashes: List[str]
     audit_logs: List[Dict]
+    planner_history: List[Dict]
+    tool_history: List[Dict]
+    onchain_audit: List[Dict]
 
     # Workflow control flags
     next_action: Optional[str]
     terminated: bool
     finished: bool
+    termination_reason: Optional[str]
+    iteration_count: int
+    max_iterations: int

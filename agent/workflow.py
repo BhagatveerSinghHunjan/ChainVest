@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from langgraph.graph import END, StateGraph
 
 from agent.aggregator import aggregate_results
@@ -11,61 +13,198 @@ from tools.financial_trends import FinancialTrendAnalyzer
 from tools.unit_economics import UnitEconomicsEngine
 from weil_mcp.chainvest_mcp import evaluate_startup
 
+ACTION_FINANCIAL = "run_financial_tool"
+ACTION_UNIT = "run_unit_tool"
+ACTION_AGGREGATE = "run_aggregation_tool"
+ACTION_LLM = "run_llm_reasoning"
+ACTION_FINALIZE = "finalize"
+ACTION_ABORT = "abort"
 
-def financial_node(state: AgentState):
-    state = log_to_chain(state, "Financial Analysis Started")
 
-    analyzer = FinancialTrendAnalyzer()
-    financial_input = FinancialInput(**state["startup_data"])
-    result = analyzer.analyze(financial_input)
-    state["financial_result"] = result
-
-    latest_revenue = state["startup_data"]["monthly_revenue"][-1]
-    latest_burn = state["startup_data"]["monthly_burn"][-1]
-    cash = state["startup_data"]["cash_on_hand"]
-    state["mcp_result"] = evaluate_startup(latest_revenue, latest_burn, cash)
-
-    state = log_to_chain(state, "Financial Analysis Completed", output_data=result)
-    state = audit_step(state, "Financial Analysis Completed")
+def _record_tool_history(state: AgentState, name: str, input_data, output_data) -> AgentState:
+    state["tool_history"].append(
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "tool": name,
+            "input": input_data,
+            "output": output_data,
+        }
+    )
     return state
 
 
-def unit_node(state: AgentState):
-    state = log_to_chain(state, "Unit Economics Analysis Started")
+def planner_node(state: AgentState):
+    state["iteration_count"] += 1
 
-    engine = UnitEconomicsEngine()
-    unit_input = UnitEconomicsInput(**state["startup_data"])
-    result = engine.analyze(unit_input)
-    state["unit_result"] = result
+    if state["iteration_count"] > state["max_iterations"]:
+        state["next_action"] = ACTION_ABORT
+        state["terminated"] = True
+        state["termination_reason"] = "max_iterations_reached"
+    elif state["financial_result"] is None:
+        state["next_action"] = ACTION_FINANCIAL
+    elif state["unit_result"] is None:
+        state["next_action"] = ACTION_UNIT
+    elif state["risk_scores"] is None:
+        state["next_action"] = ACTION_AGGREGATE
+    elif state["llm_explanation"] is None:
+        state["next_action"] = ACTION_LLM
+    else:
+        state["next_action"] = ACTION_FINALIZE
 
-    state = log_to_chain(state, "Unit Economics Analysis Completed", output_data=result)
-    state = audit_step(state, "Unit Economics Analysis Completed")
+    planner_output = {
+        "next_action": state["next_action"],
+        "iteration_count": state["iteration_count"],
+        "terminated": state["terminated"],
+        "termination_reason": state.get("termination_reason"),
+    }
+    state["planner_history"].append(planner_output)
+
+    state = log_to_chain(
+        state,
+        "Planner Decision",
+        input_data={
+            "has_financial": state["financial_result"] is not None,
+            "has_unit": state["unit_result"] is not None,
+            "has_risk": state["risk_scores"] is not None,
+            "has_llm": state["llm_explanation"] is not None,
+        },
+        output_data=planner_output,
+    )
+    state = audit_step(state, "Planner Decision")
     return state
 
 
-def aggregation_node(state: AgentState):
-    state = aggregate_results(state)
-    state = log_to_chain(state, "Aggregation Completed", output_data=state["risk_scores"])
-    state = audit_step(state, "Aggregation Completed")
+def route_from_planner(state: AgentState):
+    return state["next_action"] or ACTION_ABORT
+
+
+def tool_executor_node(state: AgentState):
+    action = state.get("next_action")
+
+    if action == ACTION_FINANCIAL:
+        state = log_to_chain(state, "Financial Analysis Started")
+
+        analyzer = FinancialTrendAnalyzer()
+        financial_input = FinancialInput(**state["startup_data"])
+        result = analyzer.analyze(financial_input)
+        state["financial_result"] = result
+
+        latest_revenue = state["startup_data"]["monthly_revenue"][-1]
+        latest_burn = state["startup_data"]["monthly_burn"][-1]
+        cash = state["startup_data"]["cash_on_hand"]
+        mcp_result = evaluate_startup(latest_revenue, latest_burn, cash)
+        state["mcp_result"] = mcp_result
+
+        state = _record_tool_history(
+            state,
+            "financial_tool",
+            financial_input.model_dump(),
+            {"financial_result": result, "mcp_result": mcp_result},
+        )
+        state = log_to_chain(
+            state,
+            "Financial Analysis Completed",
+            output_data={"financial_result": result, "mcp_result": mcp_result},
+        )
+        state = audit_step(state, "Financial Analysis Completed")
+        return state
+
+    if action == ACTION_UNIT:
+        state = log_to_chain(state, "Unit Economics Analysis Started")
+
+        engine = UnitEconomicsEngine()
+        unit_input = UnitEconomicsInput(**state["startup_data"])
+        result = engine.analyze(unit_input)
+        state["unit_result"] = result
+
+        state = _record_tool_history(
+            state,
+            "unit_economics_tool",
+            unit_input.model_dump(),
+            {"unit_result": result},
+        )
+        state = log_to_chain(
+            state,
+            "Unit Economics Analysis Completed",
+            output_data=result,
+        )
+        state = audit_step(state, "Unit Economics Analysis Completed")
+        return state
+
+    if action == ACTION_AGGREGATE:
+        state = log_to_chain(state, "Aggregation Started")
+        state = aggregate_results(state)
+        state = _record_tool_history(
+            state,
+            "aggregation_tool",
+            {
+                "financial_result": state["financial_result"],
+                "unit_result": state["unit_result"],
+            },
+            {"risk_scores": state["risk_scores"], "decision": state["decision"]},
+        )
+        state = log_to_chain(
+            state,
+            "Aggregation Completed",
+            output_data=state["risk_scores"],
+        )
+        state = audit_step(state, "Aggregation Completed")
+        return state
+
+    state["terminated"] = True
+    state["termination_reason"] = f"invalid_tool_action:{action}"
+    state = log_to_chain(
+        state,
+        "Tool Executor Aborted",
+        output_data={"reason": state["termination_reason"]},
+    )
+    state = audit_step(state, "Tool Executor Aborted")
     return state
 
 
 def llm_node(state: AgentState):
-    state = llm_reasoning_node(state)
+    risk_scores = state.get("risk_scores") or {}
     state = log_to_chain(
         state,
-        "LLM Reasoning Executed",
+        "LLM Reasoning Started",
+        input_data={
+            "financial_score": risk_scores.get("financial_score"),
+            "unit_score": risk_scores.get("unit_score"),
+            "overall_score": risk_scores.get("overall_score"),
+            "decision": state.get("decision"),
+        },
+    )
+
+    state = llm_reasoning_node(state)
+    state = _record_tool_history(
+        state,
+        "llm_reasoning",
+        state.get("llm_trace"),
+        state.get("llm_explanation"),
+    )
+
+    state = log_to_chain(
+        state,
+        "LLM Reasoning Completed",
         output_data=state.get("llm_explanation"),
     )
-    state = audit_step(state, "LLM Reasoning Executed")
+    state = audit_step(state, "LLM Reasoning Completed")
     return state
 
 
 def final_node(state: AgentState):
+    if state.get("next_action") == ACTION_ABORT and state.get("decision") is None:
+        state["decision"] = "REVIEW"
+        state["termination_reason"] = state.get("termination_reason") or "aborted_without_decision"
+
     state = log_to_chain(
         state,
         "Final Decision Generated",
-        output_data={"decision": state["decision"]},
+        output_data={
+            "decision": state.get("decision"),
+            "final_score": state.get("final_score"),
+            "termination_reason": state.get("termination_reason"),
+        },
     )
     state = audit_step(state, "Final Decision Generated")
     state["finished"] = True
@@ -74,17 +213,26 @@ def final_node(state: AgentState):
 
 def build_graph():
     builder = StateGraph(AgentState)
-    builder.add_node("financial", financial_node)
-    builder.add_node("unit", unit_node)
-    builder.add_node("aggregate", aggregation_node)
+    builder.add_node("planner", planner_node)
+    builder.add_node("tool_executor", tool_executor_node)
     builder.add_node("llm_reasoning", llm_node)
     builder.add_node("finalize", final_node)
 
-    builder.set_entry_point("financial")
-    builder.add_edge("financial", "unit")
-    builder.add_edge("unit", "aggregate")
-    builder.add_edge("aggregate", "llm_reasoning")
-    builder.add_edge("llm_reasoning", "finalize")
+    builder.set_entry_point("planner")
+    builder.add_conditional_edges(
+        "planner",
+        route_from_planner,
+        {
+            ACTION_FINANCIAL: "tool_executor",
+            ACTION_UNIT: "tool_executor",
+            ACTION_AGGREGATE: "tool_executor",
+            ACTION_LLM: "llm_reasoning",
+            ACTION_FINALIZE: "finalize",
+            ACTION_ABORT: "finalize",
+        },
+    )
+    builder.add_edge("tool_executor", "planner")
+    builder.add_edge("llm_reasoning", "planner")
     builder.add_edge("finalize", END)
     return builder.compile()
 
@@ -125,12 +273,19 @@ def run_agent(
         "risk_scores": None,
         "decision": None,
         "llm_explanation": None,
+        "llm_trace": None,
         "logs": [],
         "tx_hashes": [],
         "audit_logs": [],
+        "planner_history": [],
+        "tool_history": [],
+        "onchain_audit": [],
         "next_action": None,
         "terminated": False,
         "finished": False,
+        "termination_reason": None,
+        "iteration_count": 0,
+        "max_iterations": 12,
     }
 
     graph = build_graph()
@@ -148,8 +303,14 @@ def run_agent(
         "logs": result.get("logs"),
         "tx_hashes": result.get("tx_hashes"),
         "audit_logs": result.get("audit_logs"),
+        "planner_history": result.get("planner_history"),
+        "tool_history": result.get("tool_history"),
+        "onchain_audit": result.get("onchain_audit"),
+        "termination_reason": result.get("termination_reason"),
+        "iteration_count": result.get("iteration_count"),
     }
 
 
 if __name__ == "__main__":
     print("Workflow ready.")
+

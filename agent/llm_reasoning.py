@@ -40,6 +40,12 @@ def _strip_code_fence(text: str) -> str:
 def llm_reasoning_node(state):
     if not OPENAI_KEY:
         mock_output = _mock_explanation()
+        state["llm_trace"] = {
+            "provider": "mock",
+            "model": None,
+            "prompt": None,
+            "raw_response": json.dumps(mock_output),
+        }
         state["llm_explanation"] = mock_output
         state["market_risk"] = mock_output["market_risk_score"]
         state["founder_risk"] = mock_output["founder_risk_score"]
@@ -103,9 +109,22 @@ Decision: {state.get("decision")}
         )
         output_text = response.choices[0].message.content or "{}"
         parsed = json.loads(_strip_code_fence(output_text))
+        state["llm_trace"] = {
+            "provider": "openai",
+            "model": "gpt-4o-mini",
+            "prompt": prompt,
+            "raw_response": output_text,
+        }
     except Exception as exc:
         parsed = _mock_explanation()
         parsed["fallback_reason"] = str(exc)
+        state["llm_trace"] = {
+            "provider": "fallback-mock",
+            "model": None,
+            "prompt": prompt,
+            "raw_response": json.dumps(parsed),
+            "error": str(exc),
+        }
 
     state["llm_explanation"] = parsed
     return state

@@ -2,6 +2,29 @@ ChainVest24
 
 Blockchain-Verified AI Financial Due Diligence Engine
 
+## Agentic Audit Upgrade
+
+ChainVest now runs a planner-driven LangGraph loop with explicit control logic and
+step-wise audit logging.
+
+### What changed
+
+- `planner -> tool_executor -> planner` loop controls execution explicitly.
+- Every major step is hashed and audit-submitted via the Weilliptic Python SDK
+  when a wallet key is available.
+- LLM reasoning captures trace metadata (`prompt`, `raw_response`, provider/model)
+  and records it in workflow history.
+- Deterministic integrity checks replaced random mock auditor behavior.
+- Clear termination is enforced through `max_iterations` and explicit abort reasons.
+
+### New runtime outputs
+
+- `planner_history`: planner decisions per iteration.
+- `tool_history`: tool calls with input/output snapshots.
+- `onchain_audit`: on-chain audit response details for each logged step.
+- `termination_reason`: explicit reason if execution aborts.
+- `iteration_count`: total planner iterations consumed.
+
 ## Weilliptic Integration (Current)
 
 The backend now includes a real Weilliptic-ready integration path in

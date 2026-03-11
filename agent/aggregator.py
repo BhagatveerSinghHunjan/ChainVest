@@ -32,6 +32,4 @@ def aggregate_results(state):
         "unit_score": round(unit_score, 3),
         "overall_score": round(final_score, 3),
     }
-    state["terminated"] = True
     return state
-

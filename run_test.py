@@ -30,12 +30,19 @@ initial_state = {
     "risk_scores": None,
     "decision": None,
     "llm_explanation": None,
+    "llm_trace": None,
     "logs":[],
     "tx_hashes":[],
     "audit_logs":[],
+    "planner_history": [],
+    "tool_history": [],
+    "onchain_audit": [],
     "next_action":None,
     "terminated":False,
     "finished": False,
+    "termination_reason": None,
+    "iteration_count": 0,
+    "max_iterations": 12,
 
 }
 
