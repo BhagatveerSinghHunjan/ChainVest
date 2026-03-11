@@ -2,6 +2,35 @@ ChainVest24
 
 Blockchain-Verified AI Financial Due Diligence Engine
 
+## Weilliptic Integration (Current)
+
+The backend now includes a real Weilliptic-ready integration path in
+`weil_mcp/chainvest_mcp.py`:
+
+- Deterministic startup scoring for local/dev usage.
+- Optional on-chain audit logging through the official Python SDK
+  (`weil_wallet`, `weil_ai`) when a private key is configured.
+- MCP HTTP server bootstrap via `create_mcp_app()` for tool exposure.
+
+### Setup
+
+1. Install dependencies:
+   `pip install -r requirements.txt`
+2. Add your Weil private key file (for on-chain audit):
+   - preferred env var: `WEIL_PRIVATE_KEY_PATH`
+   - fallback filenames checked automatically: `private_key.wc`
+3. Optional env vars:
+   - `WEIL_SENTINEL_HOST` (custom sentinel endpoint)
+   - `WEIL_SENTINEL_VERIFY` (`true`/`false` TLS verify flag)
+   - `WEIL_MCP_SERVICE_NAME` (enables `@secured` tool checks)
+
+### Run MCP Server
+
+`python -m weil_mcp.chainvest_mcp`
+
+This starts a streamable HTTP MCP server on port `8001` by default.
+Set `MCP_PORT` to override.
+
 Stage 1 - Deterministic Financial Core
 
 Implemented:

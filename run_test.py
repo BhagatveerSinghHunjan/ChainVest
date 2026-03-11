@@ -21,15 +21,21 @@ startup_data = {
 graph = build_graph()
 
 initial_state = {
+    "mode": "vc",
     "startup_data": startup_data,
     "financial_result": None,
     "unit_result": None,
+    "mcp_result": None,
     "final_score": None,
+    "risk_scores": None,
     "decision": None,
+    "llm_explanation": None,
     "logs":[],
     "tx_hashes":[],
+    "audit_logs":[],
     "next_action":None,
-    "terminated":False
+    "terminated":False,
+    "finished": False,
 
 }
 

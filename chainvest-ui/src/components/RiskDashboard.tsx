@@ -5,6 +5,14 @@ export default function RiskDashboard({ result }: Props) {
 
   const scores = result.risk_scores || {};
   const mcp = result.mcp_result || null;
+  const audit = mcp?.audit || null;
+  const auditDetails = audit?.details || null;
+
+  const boolLabel = (value: unknown) => {
+    if (value === true) return "YES";
+    if (value === false) return "NO";
+    return "N/A";
+  };
 
   const Card = ({ title, value }: any) => (
     <div className="p-4 rounded-lg border border-gray-200 bg-white">
@@ -46,6 +54,14 @@ export default function RiskDashboard({ result }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <Card title="MCP Decision" value={mcp.decision} />
             <Card title="MCP Score" value={mcp.score} />
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4">
+            <Card title="On-Chain Audit" value={boolLabel(audit?.on_chain)} />
+            <Card
+              title="Tx Status"
+              value={auditDetails?.status || "N/A"}
+            />
           </div>
         </div>
       )}

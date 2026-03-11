@@ -5,6 +5,9 @@ __pycache__/
 
 # Env
 .env
+*.wc
+private_key.wc
+weil_mcp/private_key.wc
 
 # Logs
 *.log

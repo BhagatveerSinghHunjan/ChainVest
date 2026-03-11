@@ -4,8 +4,6 @@ import { useState } from "react";
 import InputForm from "@/components/InputForm";
 import RiskDashboard from "@/components/RiskDashboard";
 import ExplanationPanel from "@/components/ExplanationPanel";
-import BlockchainPanel from "@/components/BlockchainPanel";
-import ExecutionTimeline from "@/components/ExecutionTimeline";
 
 export default function Home() {
   const [result, setResult] = useState<any>(null);
@@ -44,8 +42,6 @@ export default function Home() {
           <>
             <Card><RiskDashboard result={result} /></Card>
             <Card><ExplanationPanel result={result} /></Card>
-            <Card><BlockchainPanel result={result} /></Card>
-            <Card><ExecutionTimeline result={result} /></Card>
           </>
         )}
 

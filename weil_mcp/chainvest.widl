@@ -1,16 +1,14 @@
-service ChainVestMCP {
+record StartupEvaluation {
+    decision: string,
+    score: f64
+}
 
-  operation evaluateStartup {
-    input {
-      revenue: float
-      burn: float
-      cash: float
-    }
-
-    output {
-      decision: string
-      score: float
-    }
-  }
-
+@mcp
+interface ChainVestMCP {
+    // Evaluate startup health from latest revenue, burn, and cash snapshot.
+    query func evaluate_startup(
+        revenue: f64,
+        burn: f64,
+        cash: f64
+    ) -> StartupEvaluation;
 }
