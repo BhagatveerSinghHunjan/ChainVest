@@ -9,6 +9,7 @@ from audit.auditor import audit_step
 from blockchain.logger import log_to_chain
 from schemas.economics_input import UnitEconomicsInput
 from schemas.financial_input import FinancialInput
+from weil_mcp.deployed_client import evaluate_startup_on_weilchain
 from tools.financial_trends import FinancialTrendAnalyzer
 from tools.unit_economics import UnitEconomicsEngine
 from weil_mcp.chainvest_mcp import evaluate_startup
@@ -92,7 +93,13 @@ def tool_executor_node(state: AgentState):
         latest_revenue = state["startup_data"]["monthly_revenue"][-1]
         latest_burn = state["startup_data"]["monthly_burn"][-1]
         cash = state["startup_data"]["cash_on_hand"]
-        mcp_result = evaluate_startup(latest_revenue, latest_burn, cash)
+        mcp_result = evaluate_startup_on_weilchain(latest_revenue, latest_burn, cash)
+        if mcp_result is None:
+            mcp_result = evaluate_startup(latest_revenue, latest_burn, cash)
+            mcp_result["deployment"] = {
+                "source": "local_fallback",
+                "contract_address": None,
+            }
         state["mcp_result"] = mcp_result
 
         state = _record_tool_history(
@@ -242,6 +249,7 @@ def run_agent(
     monthly_revenue: list[float],
     monthly_burn: list[float],
     cash_on_hand: float,
+    business_description: str = "",
     ltv: float = 900,
     cac: float = 300,
     gross_margin: float = 60,
@@ -249,16 +257,20 @@ def run_agent(
 ):
     avg_revenue = sum(monthly_revenue) / len(monthly_revenue) if monthly_revenue else 0.0
     avg_burn = sum(monthly_burn) / len(monthly_burn) if monthly_burn else 0.0
+    customer_count = max(float(monthly_new_customers), 1.0)
+    gross_margin_ratio = max(min(gross_margin / 100.0, 1.0), 0.0)
 
-    derived_ltv = max(avg_revenue * 8, ltv, 100.0)
-    derived_cac = max(avg_burn * 0.5, cac, 50.0)
+    revenue_per_customer = avg_revenue / customer_count if customer_count else 0.0
+    derived_ltv = max(revenue_per_customer * 6.0 * gross_margin_ratio, 100.0)
+    derived_cac = max(avg_burn / customer_count, 50.0)
 
     startup_data = {
         "monthly_revenue": monthly_revenue,
         "monthly_burn": monthly_burn,
         "cash_on_hand": cash_on_hand,
-        "ltv": derived_ltv,
-        "cac": derived_cac,
+        "business_description": business_description,
+        "ltv": round(derived_ltv, 2),
+        "cac": round(derived_cac, 2),
         "gross_margin": gross_margin,
         "monthly_new_customers": monthly_new_customers,
     }
@@ -313,4 +325,3 @@ def run_agent(
 
 if __name__ == "__main__":
     print("Workflow ready.")
-

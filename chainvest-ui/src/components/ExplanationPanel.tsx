@@ -1,7 +1,11 @@
-type Props = { result: any };
+import type { ChainVestResult } from "@/components/types";
+
+type Props = { result: ChainVestResult };
 
 export default function ExplanationPanel({ result }: Props) {
-  if (!result?.llm_explanation) return null;
+  if (!result?.llm_explanation) {
+    return null;
+  }
 
   const exp = result.llm_explanation;
 

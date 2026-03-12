@@ -1,4 +1,25 @@
-type Props = { result: any };
+import type { ReactNode } from "react";
+
+import type { ChainVestResult } from "@/components/types";
+
+type Props = { result: ChainVestResult };
+
+function DashboardCard({
+  title,
+  value,
+}: {
+  title: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <p className="text-sm text-gray-600">{title}</p>
+      <p className="text-xl font-semibold text-gray-900">
+        {value !== undefined && value !== null && value !== "" ? value : "N/A"}
+      </p>
+    </div>
+  );
+}
 
 export default function RiskDashboard({ result }: Props) {
   if (!result) return null;
@@ -14,15 +35,6 @@ export default function RiskDashboard({ result }: Props) {
     return "N/A";
   };
 
-  const Card = ({ title, value }: any) => (
-    <div className="p-4 rounded-lg border border-gray-200 bg-white">
-      <p className="text-sm text-gray-600">{title}</p>
-      <p className="text-xl font-semibold text-gray-900">
-        {value !== undefined && value !== null ? value : "N/A"}
-      </p>
-    </div>
-  );
-
   return (
     <div>
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -31,17 +43,17 @@ export default function RiskDashboard({ result }: Props) {
 
       {/* TOP ROW */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <Card title="Decision" value={result.decision} />
-        <Card title="Overall Score" value={scores.overall_score} />
-        <Card title="Financial Score" value={scores.financial_score} />
-        <Card title="Unit Score" value={scores.unit_score} />
+        <DashboardCard title="Decision" value={result.decision} />
+        <DashboardCard title="Overall Score" value={scores.overall_score} />
+        <DashboardCard title="Financial Score" value={scores.financial_score} />
+        <DashboardCard title="Unit Score" value={scores.unit_score} />
       </div>
 
       {/* SECOND ROW */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-        <Card title="Growth Score" value={scores.growth_score} />
-        <Card title="Runway Score" value={scores.runway_score} />
-        <Card title="Volatility Score" value={scores.volatility_score} />
+        <DashboardCard title="Growth Score" value={scores.growth_score} />
+        <DashboardCard title="Runway Score" value={scores.runway_score} />
+        <DashboardCard title="Volatility Score" value={scores.volatility_score} />
       </div>
 
       {/* 🔥 MCP SECTION */}
@@ -52,16 +64,12 @@ export default function RiskDashboard({ result }: Props) {
           </h3>
 
           <div className="grid grid-cols-2 gap-4">
-            <Card title="MCP Decision" value={mcp.decision} />
-            <Card title="MCP Score" value={mcp.score} />
+            <DashboardCard title="MCP Decision" value={mcp.decision} />
+            <DashboardCard title="MCP Score" value={mcp.score} />
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4">
-            <Card title="On-Chain Audit" value={boolLabel(audit?.on_chain)} />
-            <Card
-              title="Tx Status"
-              value={auditDetails?.status || "N/A"}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <DashboardCard title="On-Chain Audit" value={boolLabel(audit?.on_chain)} />
+            <DashboardCard title="Audit Status" value={auditDetails?.status || "N/A"} />
           </div>
         </div>
       )}

@@ -7,8 +7,11 @@ record StartupEvaluation {
 interface ChainVestMCP {
     // Evaluate startup health from latest revenue, burn, and cash snapshot.
     query func evaluate_startup(
+        // latest recurring or monthly revenue
         revenue: f64,
+        // current monthly burn rate
         burn: f64,
+        // current cash reserves
         cash: f64
     ) -> StartupEvaluation
 }

@@ -35,6 +35,15 @@ The backend now includes a real Weilliptic-ready integration path in
   (`weil_wallet`, `weil_ai`) when a private key is configured.
 - MCP HTTP server bootstrap via `create_mcp_app()` for tool exposure.
 
+Important:
+
+- The Python server in `weil_mcp/chainvest_mcp.py` is a local/dev MCP endpoint.
+- It does not create the WeilChain "Applet Id" required by Icarus.
+- For Icarus registration, you must separately create and deploy a WeilChain MCP
+  applet, then use its deployed `contract_address` as the Applet Id.
+- See `WEILLIPTIC_MCP_SETUP.md` for the deployment checklist and the missing
+  pieces in this repo.
+
 ### Setup
 
 1. Install dependencies:
@@ -46,6 +55,8 @@ The backend now includes a real Weilliptic-ready integration path in
    - `WEIL_SENTINEL_HOST` (custom sentinel endpoint)
    - `WEIL_SENTINEL_VERIFY` (`true`/`false` TLS verify flag)
    - `WEIL_MCP_SERVICE_NAME` (enables `@secured` tool checks)
+   - `CHAINVEST_WEIL_APPLET_ID` (defaults to the deployed ChainVest applet)
+   - `CHAINVEST_WEIL_WALLET_PATH` (defaults to `../.weil/account.wc` if present)
 
 ### Run MCP Server
 

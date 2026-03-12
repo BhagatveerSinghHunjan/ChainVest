@@ -23,6 +23,7 @@ class InputSchema(BaseModel):
     revenue: float
     burn: float
     cash: float
+    business_description: str = ""
 
 
 def _ensure_risk_scores(state: dict[str, Any]) -> None:
@@ -58,27 +59,6 @@ def _ensure_risk_scores(state: dict[str, Any]) -> None:
     else:
         state["decision"] = "REJECT"
 
-
-def _ensure_llm_explanation(state: dict[str, Any]) -> None:
-    if state.get("llm_explanation") is not None:
-        return
-
-    state["llm_explanation"] = {
-        "market_risk_score": 70,
-        "founder_risk_score": 65,
-        "summary": "Moderate risk startup with stable financial indicators.",
-        "strengths": [
-            "Consistent revenue growth",
-            "Healthy burn control",
-        ],
-        "weaknesses": [
-            "Limited market expansion",
-            "Moderate unit economics risk",
-        ],
-        "final_explanation": "Overall the startup shows stable metrics but moderate execution risk.",
-    }
-
-
 def _format_logs(logs: list[Any]) -> list[str]:
     output: list[str] = []
     for log in logs:
@@ -99,6 +79,7 @@ def analyze(data: InputSchema):
         monthly_revenue=[data.revenue] * 12,
         monthly_burn=[data.burn] * 12,
         cash_on_hand=data.cash,
+        business_description=data.business_description,
     )
 
     print("\n===== NEW REQUEST =====")
@@ -108,7 +89,6 @@ def analyze(data: InputSchema):
     state["mode"] = state.get("mode") or data.mode
 
     _ensure_risk_scores(state)
-    _ensure_llm_explanation(state)
 
     return {
         "mode": state.get("mode"),
@@ -119,6 +99,7 @@ def analyze(data: InputSchema):
         "unit_result": state.get("unit_result"),
         "risk_scores": state.get("risk_scores"),
         "llm_explanation": state.get("llm_explanation"),
+        "llm_trace": state.get("llm_trace"),
         "mcp_result": state.get("mcp_result"),
         "logs": _format_logs(state.get("logs", [])),
         "tx_hashes": state.get("tx_hashes", []),

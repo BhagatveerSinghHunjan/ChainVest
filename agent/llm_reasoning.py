@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Dict
 
 from blockchain.logger import log_to_chain
 
@@ -10,23 +9,6 @@ if OPENAI_KEY:
     from openai import OpenAI
 
     client = OpenAI()
-
-
-def _mock_explanation() -> Dict:
-    return {
-        "market_risk_score": 70,
-        "founder_risk_score": 65,
-        "summary": "Moderate risk startup with stable financial indicators.",
-        "strengths": [
-            "Consistent revenue growth",
-            "Healthy burn control",
-        ],
-        "weaknesses": [
-            "Limited market expansion",
-            "Moderate unit economics risk",
-        ],
-        "final_explanation": "Overall the startup shows stable metrics but moderate execution risk.",
-    }
 
 
 def _strip_code_fence(text: str) -> str:
@@ -39,17 +21,19 @@ def _strip_code_fence(text: str) -> str:
 
 def llm_reasoning_node(state):
     if not OPENAI_KEY:
-        mock_output = _mock_explanation()
         state["llm_trace"] = {
-            "provider": "mock",
+            "provider": "disabled",
             "model": None,
             "prompt": None,
-            "raw_response": json.dumps(mock_output),
+            "raw_response": None,
+            "reason": "OPENAI_API_KEY is not configured",
         }
-        state["llm_explanation"] = mock_output
-        state["market_risk"] = mock_output["market_risk_score"]
-        state["founder_risk"] = mock_output["founder_risk_score"]
-        state = log_to_chain(state, "Mock LLM Reasoning Used", output_data=mock_output)
+        state["llm_explanation"] = None
+        state = log_to_chain(
+            state,
+            "LLM Reasoning Skipped",
+            output_data={"reason": "OPENAI_API_KEY is not configured"},
+        )
         return state
 
     risk_scores = state.get("risk_scores") or {}
@@ -92,6 +76,7 @@ Return STRICT JSON:
 }}
 
 DATA:
+Business Description: {state.get("startup_data", {}).get("business_description") or "N/A"}
 Financial Score: {risk_scores.get("financial_score")}
 Unit Score: {risk_scores.get("unit_score")}
 Growth Score: {risk_scores.get("growth_score")}
@@ -116,13 +101,12 @@ Decision: {state.get("decision")}
             "raw_response": output_text,
         }
     except Exception as exc:
-        parsed = _mock_explanation()
-        parsed["fallback_reason"] = str(exc)
+        parsed = None
         state["llm_trace"] = {
-            "provider": "fallback-mock",
+            "provider": "error",
             "model": None,
             "prompt": prompt,
-            "raw_response": json.dumps(parsed),
+            "raw_response": None,
             "error": str(exc),
         }
 

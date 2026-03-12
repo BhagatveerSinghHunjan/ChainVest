@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+
 import InputForm from "@/components/InputForm";
 import RiskDashboard from "@/components/RiskDashboard";
 import ExplanationPanel from "@/components/ExplanationPanel";
+import BlockchainPanel from "@/components/BlockchainPanel";
+import type { ChainVestResult } from "@/components/types";
 
 export default function Home() {
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ChainVestResult | null>(null);
 
   return (
     <div className="min-h-screen bg-[#f4f6fb]">
@@ -41,6 +44,7 @@ export default function Home() {
         {result && (
           <>
             <Card><RiskDashboard result={result} /></Card>
+            <Card><BlockchainPanel result={result} /></Card>
             <Card><ExplanationPanel result={result} /></Card>
           </>
         )}
@@ -50,7 +54,7 @@ export default function Home() {
   );
 }
 
-function Card({ children }: any) {
+function Card({ children }: { children: ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
       {children}

@@ -15,3 +15,7 @@ weil_mcp/private_key.wc
 # OS
 .DS_Store
 Thumbs.db
+
+# Rust applet build outputs
+weil_applet_rust/target/
+weil_applet_rust/dist/

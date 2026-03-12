@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+
+import type { ChainVestResult } from "@/components/types";
 
 type Props = {
-  onResult: (data: any) => void;
+  onResult: (data: ChainVestResult) => void;
 };
 
 export default function InputForm({ onResult }: Props) {
@@ -11,9 +13,10 @@ export default function InputForm({ onResult }: Props) {
   const [revenue, setRevenue] = useState("");
   const [burn, setBurn] = useState("");
   const [cash, setCash] = useState("");
+  const [businessDescription, setBusinessDescription] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
@@ -25,6 +28,7 @@ export default function InputForm({ onResult }: Props) {
         revenue: Number(revenue),
         burn: Number(burn),
         cash: Number(cash),
+        business_description: businessDescription,
       }),
     });
 
@@ -34,50 +38,98 @@ export default function InputForm({ onResult }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-xl font-semibold text-gray-900">VC Intake</h2>
+        <p className="text-sm text-gray-600">
+          Enter the core startup metrics and a short business summary. This is the
+          baseline information a VC typically uses to decide whether a company is
+          worth taking into diligence.
+        </p>
+      </div>
 
-      <h2 className="text-lg font-semibold text-gray-900">Run Analysis</h2>
+      <div className="grid gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4 md:grid-cols-4">
+        <MetricHint title="Revenue Quality" text="Consistent monthly revenue, healthy growth, repeatability." />
+        <MetricHint title="Burn Control" text="Burn that is proportionate to growth and product traction." />
+        <MetricHint title="Cash Runway" text="Enough cash to execute, usually 12-18 months is safer." />
+        <MetricHint title="Narrative" text="Clear market, wedge, customer pain, and why now." />
+      </div>
 
-      <select
-        value={mode}
-        onChange={(e) => setMode(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
-      >
-        <option value="vc">VC Mode</option>
-        <option value="loan">Loan Mode</option>
-      </select>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-2">
+            <span className="text-sm font-medium text-gray-800">Evaluation Mode</span>
+            <select
+              value={mode}
+              onChange={(e) => setMode(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="vc">VC Mode</option>
+              <option value="loan">Loan Mode</option>
+            </select>
+          </label>
 
-      <input
-        type="number"
-        placeholder="Monthly Revenue"
-        value={revenue}
-        onChange={(e) => setRevenue(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
-        required
-      />
+          <label className="space-y-2">
+            <span className="text-sm font-medium text-gray-800">Monthly Revenue</span>
+            <input
+              type="number"
+              placeholder="e.g. 125000"
+              value={revenue}
+              onChange={(e) => setRevenue(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:ring-2 focus:ring-emerald-500"
+              required
+            />
+          </label>
 
-      <input
-        type="number"
-        placeholder="Monthly Burn"
-        value={burn}
-        onChange={(e) => setBurn(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
-        required
-      />
+          <label className="space-y-2">
+            <span className="text-sm font-medium text-gray-800">Monthly Burn</span>
+            <input
+              type="number"
+              placeholder="e.g. 80000"
+              value={burn}
+              onChange={(e) => setBurn(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:ring-2 focus:ring-emerald-500"
+              required
+            />
+          </label>
 
-      <input
-        type="number"
-        placeholder="Cash Available"
-        value={cash}
-        onChange={(e) => setCash(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
-        required
-      />
+          <label className="space-y-2">
+            <span className="text-sm font-medium text-gray-800">Cash Available</span>
+            <input
+              type="number"
+              placeholder="e.g. 950000"
+              value={cash}
+              onChange={(e) => setCash(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:ring-2 focus:ring-emerald-500"
+              required
+            />
+          </label>
+        </div>
 
-      <button className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
-        {loading ? "Analyzing..." : "Analyze"}
-      </button>
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-gray-800">Brief Business Description</span>
+          <textarea
+            placeholder="Describe what the company does, who the customer is, what problem it solves, how it makes money, and any traction that matters."
+            value={businessDescription}
+            onChange={(e) => setBusinessDescription(e.target.value)}
+            rows={6}
+            className="w-full resize-none rounded-2xl border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:ring-2 focus:ring-emerald-500"
+          />
+        </label>
 
-    </form>
+        <button className="w-full rounded-xl bg-emerald-600 py-3 font-medium text-white transition hover:bg-emerald-700">
+          {loading ? "Analyzing..." : "Run VC Analysis"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function MetricHint({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-lg border border-emerald-200 bg-white/80 p-3">
+      <p className="text-sm font-semibold text-gray-900">{title}</p>
+      <p className="mt-1 text-xs leading-5 text-gray-600">{text}</p>
+    </div>
   );
 }
