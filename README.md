@@ -57,6 +57,9 @@ Important:
    - `WEIL_MCP_SERVICE_NAME` (enables `@secured` tool checks)
    - `CHAINVEST_WEIL_APPLET_ID` (defaults to the deployed ChainVest applet)
    - `CHAINVEST_WEIL_WALLET_PATH` (defaults to `../.weil/account.wc` if present)
+   - `CEREBRUM_BASE_URL` (OpenAI-compatible Cerebrum endpoint)
+   - `CEREBRUM_MODEL` (defaults to `gpt-4o-mini`)
+   - `OPENAI_API_KEY` (may be a dummy value if Cerebrum accepts OpenAI-compatible auth without a real OpenAI key)
 
 ### Run MCP Server
 

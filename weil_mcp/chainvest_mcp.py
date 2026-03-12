@@ -35,17 +35,95 @@ def _safe_float(value: Any, *, minimum: float = 0.0) -> float:
     return max(parsed, minimum)
 
 
-def _score_startup(revenue: float, burn: float, cash: float) -> dict[str, Any]:
-    score = (revenue / (burn + 1.0)) * (cash / 10000.0)
+def _normalize_text(value: Any) -> str:
+    return " ".join(str(value or "").strip().lower().split())
 
-    if score > 5:
+
+def _clamp_score(value: float, lower: float = 0.0, upper: float = 1.0) -> float:
+    return max(lower, min(value, upper))
+
+
+def _score_business_description(description: str) -> dict[str, Any]:
+    text = _normalize_text(description)
+    if not text:
+        return {
+            "sector": "general",
+            "sector_score": 0.45,
+            "scalability_score": 0.4,
+            "market_score": 0.4,
+            "moat_score": 0.35,
+            "business_score": 0.4,
+        }
+
+    sector = "general"
+    sector_score = 0.58
+    if any(token in text for token in {"ai", "artificial intelligence", "llm", "automation"}):
+        sector = "ai"
+        sector_score = 0.74
+    elif any(token in text for token in {"fintech", "payments", "banking", "lending", "treasury"}):
+        sector = "fintech"
+        sector_score = 0.72
+    elif any(token in text for token in {"health", "healthcare", "clinical", "medical"}):
+        sector = "healthtech"
+        sector_score = 0.70
+    elif any(token in text for token in {"software", "saas", "api", "platform"}):
+        sector = "saas"
+        sector_score = 0.66
+
+    recurring_bonus = 0.16 if any(token in text for token in {"recurring", "subscription", "annual contract", "saas"}) else 0.0
+    enterprise_bonus = 0.12 if any(token in text for token in {"enterprise", "b2b", "workflow", "infrastructure"}) else 0.0
+    services_penalty = 0.18 if any(token in text for token in {"agency", "consulting", "services", "outsourcing"}) else 0.0
+    scalability_score = _clamp_score(0.44 + recurring_bonus + enterprise_bonus - services_penalty)
+
+    market_score = _clamp_score(
+        0.42
+        + (0.18 if any(token in text for token in {"large market", "growing market", "global", "regulated", "mission-critical"}) else 0.0)
+        + (0.08 if any(token in text for token in {"enterprise", "mid-market", "compliance"}) else 0.0)
+    )
+
+    moat_score = _clamp_score(
+        0.35
+        + (0.22 if any(token in text for token in {"moat", "network effects", "proprietary", "data advantage", "switching costs"}) else 0.0)
+        + (0.08 if any(token in text for token in {"embedded", "integration", "compliance"}) else 0.0)
+    )
+
+    business_score = _clamp_score(
+        (0.20 * sector_score) + (0.35 * scalability_score) + (0.25 * market_score) + (0.20 * moat_score)
+    )
+
+    return {
+        "sector": sector,
+        "sector_score": round(sector_score, 3),
+        "scalability_score": round(scalability_score, 3),
+        "market_score": round(market_score, 3),
+        "moat_score": round(moat_score, 3),
+        "business_score": round(business_score, 3),
+    }
+
+
+def _score_startup(revenue: float, burn: float, cash: float, business_description: str) -> dict[str, Any]:
+    financial_score = _clamp_score((revenue / (burn + 1.0)) * (cash / 10000.0) / 8.0)
+    business = _score_business_description(business_description)
+    score = (0.65 * financial_score) + (0.35 * business["business_score"])
+
+    if score > 0.75:
         decision = "APPROVE"
-    elif score > 2:
+    elif score > 0.5:
         decision = "REVIEW"
     else:
         decision = "REJECT"
 
-    return {"decision": decision, "score": round(score, 2)}
+    return {
+        "decision": decision,
+        "score": round(score, 3),
+        "financial_score": round(financial_score, 3),
+        "business_score": business["business_score"],
+        "scalability_score": business["scalability_score"],
+        "market_score": business["market_score"],
+        "moat_score": business["moat_score"],
+        "sector_score": business["sector_score"],
+        "sector": business["sector"],
+    }
 
 
 def _resolve_private_key_path() -> Optional[str]:
@@ -110,16 +188,21 @@ async def _audit_on_weil(payload: dict[str, Any]) -> Optional[dict[str, Any]]:
         return {"error": str(exc)}
 
 
-def evaluate_startup(revenue: float, burn: float, cash: float) -> dict[str, Any]:
+def evaluate_startup(revenue: float, burn: float, cash: float, business_description: str = "") -> dict[str, Any]:
     revenue = _safe_float(revenue)
     burn = _safe_float(burn)
     cash = _safe_float(cash)
 
-    result = _score_startup(revenue, burn, cash)
+    result = _score_startup(revenue, burn, cash, business_description)
     payload = {
         "source": "chainvest",
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "inputs": {"revenue": revenue, "burn": burn, "cash": cash},
+        "inputs": {
+            "revenue": revenue,
+            "burn": burn,
+            "cash": cash,
+            "business_description": business_description,
+        },
         "evaluation": result,
     }
 
@@ -148,14 +231,14 @@ def create_mcp_app():
 
         @mcp.tool()
         @secured(secured_service)
-        async def evaluate_startup_tool(revenue: float, burn: float, cash: float) -> str:
-            return json.dumps(evaluate_startup(revenue, burn, cash))
+        async def evaluate_startup_tool(revenue: float, burn: float, cash: float, business_description: str = "") -> str:
+            return json.dumps(evaluate_startup(revenue, burn, cash, business_description))
 
     else:
 
         @mcp.tool()
-        async def evaluate_startup_tool(revenue: float, burn: float, cash: float) -> str:
-            return json.dumps(evaluate_startup(revenue, burn, cash))
+        async def evaluate_startup_tool(revenue: float, burn: float, cash: float, business_description: str = "") -> str:
+            return json.dumps(evaluate_startup(revenue, burn, cash, business_description))
 
     app = mcp.http_app(transport="streamable-http")
     if weil_middleware is not None:
@@ -171,4 +254,3 @@ if __name__ == "__main__":
 
     app = create_mcp_app()
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("MCP_PORT", "8001")))
-

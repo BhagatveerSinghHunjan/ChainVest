@@ -9,6 +9,7 @@ from audit.auditor import audit_step
 from blockchain.logger import log_to_chain
 from schemas.economics_input import UnitEconomicsInput
 from schemas.financial_input import FinancialInput
+from tools.business_assessment import BusinessAssessmentEngine
 from weil_mcp.deployed_client import evaluate_startup_on_weilchain
 from tools.financial_trends import FinancialTrendAnalyzer
 from tools.unit_economics import UnitEconomicsEngine
@@ -16,6 +17,7 @@ from weil_mcp.chainvest_mcp import evaluate_startup
 
 ACTION_FINANCIAL = "run_financial_tool"
 ACTION_UNIT = "run_unit_tool"
+ACTION_BUSINESS = "run_business_tool"
 ACTION_AGGREGATE = "run_aggregation_tool"
 ACTION_LLM = "run_llm_reasoning"
 ACTION_FINALIZE = "finalize"
@@ -45,6 +47,8 @@ def planner_node(state: AgentState):
         state["next_action"] = ACTION_FINANCIAL
     elif state["unit_result"] is None:
         state["next_action"] = ACTION_UNIT
+    elif state["business_result"] is None:
+        state["next_action"] = ACTION_BUSINESS
     elif state["risk_scores"] is None:
         state["next_action"] = ACTION_AGGREGATE
     elif state["llm_explanation"] is None:
@@ -93,9 +97,15 @@ def tool_executor_node(state: AgentState):
         latest_revenue = state["startup_data"]["monthly_revenue"][-1]
         latest_burn = state["startup_data"]["monthly_burn"][-1]
         cash = state["startup_data"]["cash_on_hand"]
-        mcp_result = evaluate_startup_on_weilchain(latest_revenue, latest_burn, cash)
+        business_description = state["startup_data"].get("business_description", "")
+        mcp_result = evaluate_startup_on_weilchain(
+            latest_revenue,
+            latest_burn,
+            cash,
+            business_description,
+        )
         if mcp_result is None:
-            mcp_result = evaluate_startup(latest_revenue, latest_burn, cash)
+            mcp_result = evaluate_startup(latest_revenue, latest_burn, cash, business_description)
             mcp_result["deployment"] = {
                 "source": "local_fallback",
                 "contract_address": None,
@@ -156,6 +166,27 @@ def tool_executor_node(state: AgentState):
             output_data=state["risk_scores"],
         )
         state = audit_step(state, "Aggregation Completed")
+        return state
+
+    if action == ACTION_BUSINESS:
+        state = log_to_chain(state, "Business Assessment Started")
+        engine = BusinessAssessmentEngine()
+        description = state["startup_data"].get("business_description", "")
+        result = engine.analyze(description, state.get("mode", "vc"))
+        state["business_result"] = result
+
+        state = _record_tool_history(
+            state,
+            "business_assessment_tool",
+            {"business_description": description, "mode": state.get("mode")},
+            {"business_result": result},
+        )
+        state = log_to_chain(
+            state,
+            "Business Assessment Completed",
+            output_data=result,
+        )
+        state = audit_step(state, "Business Assessment Completed")
         return state
 
     state["terminated"] = True
@@ -232,6 +263,7 @@ def build_graph():
         {
             ACTION_FINANCIAL: "tool_executor",
             ACTION_UNIT: "tool_executor",
+            ACTION_BUSINESS: "tool_executor",
             ACTION_AGGREGATE: "tool_executor",
             ACTION_LLM: "llm_reasoning",
             ACTION_FINALIZE: "finalize",
@@ -280,6 +312,7 @@ def run_agent(
         "startup_data": startup_data,
         "financial_result": None,
         "unit_result": None,
+        "business_result": None,
         "mcp_result": None,
         "final_score": None,
         "risk_scores": None,
@@ -309,6 +342,7 @@ def run_agent(
         "final_score": result["final_score"],
         "financial_result": result["financial_result"],
         "unit_result": result["unit_result"],
+        "business_result": result.get("business_result"),
         "mcp_result": result.get("mcp_result"),
         "risk_scores": result.get("risk_scores"),
         "llm_explanation": result.get("llm_explanation"),

@@ -12,12 +12,12 @@ export default function Home() {
   const [result, setResult] = useState<ChainVestResult | null>(null);
 
   return (
-    <div className="min-h-screen bg-[#f4f6fb]">
+    <div className="graph-paper-bg min-h-screen">
 
       {/* NAVBAR */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-900">ChainVest</h1>
+          <h1 className="brand-wordmark">ChainVest</h1>
           <span className="text-sm text-gray-600">
             Blockchain-Verified AI Decisions
           </span>

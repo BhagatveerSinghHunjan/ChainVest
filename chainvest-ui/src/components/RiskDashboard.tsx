@@ -28,6 +28,7 @@ export default function RiskDashboard({ result }: Props) {
   const mcp = result.mcp_result || null;
   const audit = mcp?.audit || null;
   const auditDetails = audit?.details || null;
+  const business = result.business_result || null;
 
   const boolLabel = (value: unknown) => {
     if (value === true) return "YES";
@@ -50,11 +51,27 @@ export default function RiskDashboard({ result }: Props) {
       </div>
 
       {/* SECOND ROW */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <DashboardCard title="Growth Score" value={scores.growth_score} />
         <DashboardCard title="Runway Score" value={scores.runway_score} />
         <DashboardCard title="Volatility Score" value={scores.volatility_score} />
+        <DashboardCard title="Business Score" value={scores.business_score} />
       </div>
+
+      {business && (
+        <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <h3 className="mb-2 text-md font-semibold text-emerald-900">
+            Business Quality Assessment
+          </h3>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+            <DashboardCard title="Sector" value={business.sector} />
+            <DashboardCard title="Scalability" value={business.scalability_score} />
+            <DashboardCard title="Market" value={business.market_score} />
+            <DashboardCard title="Moat" value={business.moat_score} />
+            <DashboardCard title="Traction" value={business.traction_score} />
+          </div>
+        </div>
+      )}
 
       {/* 🔥 MCP SECTION */}
       {mcp && (
@@ -63,9 +80,11 @@ export default function RiskDashboard({ result }: Props) {
             Weil MCP Structured Evaluation
           </h3>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <DashboardCard title="MCP Decision" value={mcp.decision} />
             <DashboardCard title="MCP Score" value={mcp.score} />
+            <DashboardCard title="MCP Financial" value={mcp.financial_score} />
+            <DashboardCard title="MCP Business" value={mcp.business_score} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <DashboardCard title="On-Chain Audit" value={boolLabel(audit?.on_chain)} />

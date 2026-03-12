@@ -9,6 +9,7 @@ class AgentState(TypedDict):
     # Tool Outputs
     financial_result: Optional[Dict]
     unit_result: Optional[Dict]
+    business_result: Optional[Dict]
     mcp_result: Optional[Dict]
 
     # Aggregation

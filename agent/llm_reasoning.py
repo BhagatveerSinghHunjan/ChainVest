@@ -2,13 +2,22 @@ import json
 import os
 
 from blockchain.logger import log_to_chain
+from dotenv import load_dotenv
 
+load_dotenv()
+
+CEREBRUM_BASE_URL = os.getenv("CEREBRUM_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+CEREBRUM_MODEL = os.getenv("CEREBRUM_MODEL") or os.getenv("OPENAI_MODEL") or "gpt-4o-mini"
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+LLM_ENABLED = bool(OPENAI_KEY or CEREBRUM_BASE_URL)
 
-if OPENAI_KEY:
+if LLM_ENABLED:
     from openai import OpenAI
 
-    client = OpenAI()
+    client = OpenAI(
+        api_key=OPENAI_KEY or "dummy",
+        base_url=CEREBRUM_BASE_URL,
+    )
 
 
 def _strip_code_fence(text: str) -> str:
@@ -20,19 +29,19 @@ def _strip_code_fence(text: str) -> str:
 
 
 def llm_reasoning_node(state):
-    if not OPENAI_KEY:
+    if not LLM_ENABLED:
         state["llm_trace"] = {
             "provider": "disabled",
             "model": None,
             "prompt": None,
             "raw_response": None,
-            "reason": "OPENAI_API_KEY is not configured",
+            "reason": "Cerebrum client is not configured",
         }
         state["llm_explanation"] = None
         state = log_to_chain(
             state,
             "LLM Reasoning Skipped",
-            output_data={"reason": "OPENAI_API_KEY is not configured"},
+            output_data={"reason": "Cerebrum client is not configured"},
         )
         return state
 
@@ -51,8 +60,9 @@ Volatility Score = 1 / (1 + Revenue Volatility)
 
 Financial Score = (Growth + Runway + Volatility) / 3
 Unit Score = Sustainability Score / 100
+Business Score = Business Assessment Score / 100
 
-Final Score = 0.6(Financial Score) + 0.4(Unit Score)
+Final Score = 0.45(Financial Score) + 0.25(Unit Score) + 0.30(Business Score)
 
 DECISION RULES:
 
@@ -79,6 +89,8 @@ DATA:
 Business Description: {state.get("startup_data", {}).get("business_description") or "N/A"}
 Financial Score: {risk_scores.get("financial_score")}
 Unit Score: {risk_scores.get("unit_score")}
+Business Score: {risk_scores.get("business_score")}
+Business Assessment: {state.get("business_result")}
 Growth Score: {risk_scores.get("growth_score")}
 Runway Score: {risk_scores.get("runway_score")}
 Volatility Score: {risk_scores.get("volatility_score")}
@@ -88,15 +100,15 @@ Decision: {state.get("decision")}
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=CEREBRUM_MODEL,
             temperature=0,
             messages=[{"role": "user", "content": prompt}],
         )
         output_text = response.choices[0].message.content or "{}"
         parsed = json.loads(_strip_code_fence(output_text))
         state["llm_trace"] = {
-            "provider": "openai",
-            "model": "gpt-4o-mini",
+            "provider": "cerebrum" if CEREBRUM_BASE_URL else "openai-compatible",
+            "model": CEREBRUM_MODEL,
             "prompt": prompt,
             "raw_response": output_text,
         }

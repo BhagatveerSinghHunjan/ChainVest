@@ -1,6 +1,13 @@
 record StartupEvaluation {
     decision: string,
-    score: f64
+    score: f64,
+    financial_score: f64,
+    business_score: f64,
+    scalability_score: f64,
+    market_score: f64,
+    moat_score: f64,
+    sector_score: f64,
+    sector: string
 }
 
 @mcp
@@ -9,6 +16,7 @@ interface ChainVestMCP {
     query func evaluate_startup(
         revenue: f64,
         burn: f64,
-        cash: f64
+        cash: f64,
+        business_description: string
     ) -> StartupEvaluation
 }

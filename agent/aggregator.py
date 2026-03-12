@@ -1,6 +1,7 @@
 def aggregate_results(state):
     financial = state["financial_result"]
     unit = state["unit_result"]
+    business = state["business_result"]
 
     # Exact scoring rules
     growth_score = max(min(financial["avg_mom_growth"], 1.0), 0.0)
@@ -9,7 +10,8 @@ def aggregate_results(state):
 
     financial_score = (growth_score + runway_score + volatility_score) / 3.0
     unit_score = unit["sustainability_score"] / 100.0
-    final_score = (0.6 * financial_score) + (0.4 * unit_score)
+    business_score = business["business_score"] / 100.0
+    final_score = (0.45 * financial_score) + (0.25 * unit_score) + (0.30 * business_score)
 
     # Decision rules:
     # > 0.75 -> APPROVE
@@ -30,6 +32,7 @@ def aggregate_results(state):
         "volatility_score": round(volatility_score, 3),
         "financial_score": round(financial_score, 3),
         "unit_score": round(unit_score, 3),
+        "business_score": round(business_score, 3),
         "overall_score": round(final_score, 3),
     }
     return state

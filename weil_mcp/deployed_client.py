@@ -33,7 +33,7 @@ except Exception:
 
 
 DEFAULT_CHAINVEST_APPLET_ID = (
-    "aaaaaarmzegrecke66runes2ribzsskfkx5krsphxnaq7u2ol42o3laqfm"
+    "aaaaaatg4hm23lex4jeisnflilatgn5hqhjpfh3ujc2kofr5alyxmolyce"
 )
 
 
@@ -107,6 +107,7 @@ async def _execute_deployed_evaluation(
     revenue: float,
     burn: float,
     cash: float,
+    business_description: str,
 ) -> dict[str, Any]:
     if not WEIL_CONTRACT_CLIENT_AVAILABLE:
         raise RuntimeError("weil_wallet contract client is unavailable")
@@ -128,7 +129,14 @@ async def _execute_deployed_evaluation(
         response = await client.execute(
             ContractId(_resolve_contract_id()),
             "evaluate_startup",
-            json.dumps({"revenue": revenue, "burn": burn, "cash": cash}),
+            json.dumps(
+                {
+                    "revenue": revenue,
+                    "burn": burn,
+                    "cash": cash,
+                    "business_description": business_description,
+                }
+            ),
             should_hide_args=False,
         )
     finally:
@@ -154,9 +162,10 @@ def evaluate_startup_on_weilchain(
     revenue: float,
     burn: float,
     cash: float,
+    business_description: str,
 ) -> Optional[dict[str, Any]]:
     try:
-        return _run_sync(_execute_deployed_evaluation(revenue, burn, cash))
+        return _run_sync(_execute_deployed_evaluation(revenue, burn, cash, business_description))
     except Exception:
         return None
 
