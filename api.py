@@ -187,8 +187,6 @@ def analyze(data: InputSchema):
         "unit_result": state.get("unit_result"),
         "business_result": state.get("business_result"),
         "risk_scores": state.get("risk_scores"),
-        "llm_explanation": state.get("llm_explanation"),
-        "llm_trace": state.get("llm_trace"),
         "mcp_result": state.get("mcp_result"),
         "logs": _format_logs(state.get("logs", [])),
         "tx_hashes": state.get("tx_hashes", []),

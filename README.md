@@ -12,8 +12,6 @@ step-wise audit logging.
 - `planner -> tool_executor -> planner` loop controls execution explicitly.
 - Every major step is hashed and audit-submitted via the Weilliptic Python SDK
   when a wallet key is available.
-- LLM reasoning captures trace metadata (`prompt`, `raw_response`, provider/model)
-  and records it in workflow history.
 - Deterministic integrity checks replaced random mock auditor behavior.
 - Clear termination is enforced through `max_iterations` and explicit abort reasons.
 
@@ -57,9 +55,6 @@ Important:
    - `WEIL_MCP_SERVICE_NAME` (enables `@secured` tool checks)
    - `CHAINVEST_WEIL_APPLET_ID` (defaults to the deployed ChainVest applet)
    - `CHAINVEST_WEIL_WALLET_PATH` (defaults to `../.weil/account.wc` if present)
-   - `CEREBRUM_BASE_URL` (OpenAI-compatible Cerebrum endpoint)
-   - `CEREBRUM_MODEL` (defaults to `gpt-4o-mini`)
-   - `OPENAI_API_KEY` (may be a dummy value if Cerebrum accepts OpenAI-compatible auth without a real OpenAI key)
 
 ### Run MCP Server
 

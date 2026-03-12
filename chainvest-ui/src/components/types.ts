@@ -13,12 +13,6 @@ export type ChainVestResult = {
     highlights?: string[];
     concerns?: string[];
   };
-  llm_explanation?: {
-    summary?: string;
-    strengths?: string[];
-    weaknesses?: string[];
-    final_explanation?: string;
-  } | null;
   risk_scores?: Record<string, number | string | null | undefined>;
   business_result?: {
     sector?: string;
@@ -30,12 +24,6 @@ export type ChainVestResult = {
     business_score?: number;
     flags?: string[];
   };
-  llm_trace?: {
-    provider?: string | null;
-    model?: string | null;
-    reason?: string | null;
-    error?: string | null;
-  } | null;
   mcp_result?: {
     decision?: string;
     score?: number;

@@ -20,8 +20,8 @@ def audit_step(state: dict[str, Any], step_name: str) -> dict[str, Any]:
         allowed = {
             "run_financial_tool",
             "run_unit_tool",
+            "run_business_tool",
             "run_aggregation_tool",
-            "run_llm_reasoning",
             "finalize",
             "abort",
         }
@@ -62,4 +62,3 @@ def audit_step(state: dict[str, Any], step_name: str) -> dict[str, Any]:
 
     state["audit_logs"].append(audit_entry)
     return state
-

@@ -18,8 +18,6 @@ class AgentState(TypedDict):
 
     # Final Output
     decision: Optional[str]
-    llm_explanation: Optional[Dict]
-    llm_trace: Optional[Dict]
 
     # Audit + execution traces
     logs: List[Dict]

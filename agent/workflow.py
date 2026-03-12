@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from langgraph.graph import END, StateGraph
 
 from agent.aggregator import aggregate_results
-from agent.llm_reasoning import llm_reasoning_node
 from agent.state import AgentState
 from audit.auditor import audit_step
 from blockchain.logger import log_to_chain
@@ -19,7 +18,6 @@ ACTION_FINANCIAL = "run_financial_tool"
 ACTION_UNIT = "run_unit_tool"
 ACTION_BUSINESS = "run_business_tool"
 ACTION_AGGREGATE = "run_aggregation_tool"
-ACTION_LLM = "run_llm_reasoning"
 ACTION_FINALIZE = "finalize"
 ACTION_ABORT = "abort"
 
@@ -51,8 +49,6 @@ def planner_node(state: AgentState):
         state["next_action"] = ACTION_BUSINESS
     elif state["risk_scores"] is None:
         state["next_action"] = ACTION_AGGREGATE
-    elif state["llm_explanation"] is None:
-        state["next_action"] = ACTION_LLM
     else:
         state["next_action"] = ACTION_FINALIZE
 
@@ -70,8 +66,8 @@ def planner_node(state: AgentState):
         input_data={
             "has_financial": state["financial_result"] is not None,
             "has_unit": state["unit_result"] is not None,
+            "has_business": state["business_result"] is not None,
             "has_risk": state["risk_scores"] is not None,
-            "has_llm": state["llm_explanation"] is not None,
         },
         output_data=planner_output,
     )
@@ -157,6 +153,7 @@ def tool_executor_node(state: AgentState):
             {
                 "financial_result": state["financial_result"],
                 "unit_result": state["unit_result"],
+                "business_result": state["business_result"],
             },
             {"risk_scores": state["risk_scores"], "decision": state["decision"]},
         )
@@ -200,36 +197,6 @@ def tool_executor_node(state: AgentState):
     return state
 
 
-def llm_node(state: AgentState):
-    risk_scores = state.get("risk_scores") or {}
-    state = log_to_chain(
-        state,
-        "LLM Reasoning Started",
-        input_data={
-            "financial_score": risk_scores.get("financial_score"),
-            "unit_score": risk_scores.get("unit_score"),
-            "overall_score": risk_scores.get("overall_score"),
-            "decision": state.get("decision"),
-        },
-    )
-
-    state = llm_reasoning_node(state)
-    state = _record_tool_history(
-        state,
-        "llm_reasoning",
-        state.get("llm_trace"),
-        state.get("llm_explanation"),
-    )
-
-    state = log_to_chain(
-        state,
-        "LLM Reasoning Completed",
-        output_data=state.get("llm_explanation"),
-    )
-    state = audit_step(state, "LLM Reasoning Completed")
-    return state
-
-
 def final_node(state: AgentState):
     if state.get("next_action") == ACTION_ABORT and state.get("decision") is None:
         state["decision"] = "REVIEW"
@@ -253,7 +220,6 @@ def build_graph():
     builder = StateGraph(AgentState)
     builder.add_node("planner", planner_node)
     builder.add_node("tool_executor", tool_executor_node)
-    builder.add_node("llm_reasoning", llm_node)
     builder.add_node("finalize", final_node)
 
     builder.set_entry_point("planner")
@@ -265,13 +231,11 @@ def build_graph():
             ACTION_UNIT: "tool_executor",
             ACTION_BUSINESS: "tool_executor",
             ACTION_AGGREGATE: "tool_executor",
-            ACTION_LLM: "llm_reasoning",
             ACTION_FINALIZE: "finalize",
             ACTION_ABORT: "finalize",
         },
     )
     builder.add_edge("tool_executor", "planner")
-    builder.add_edge("llm_reasoning", "planner")
     builder.add_edge("finalize", END)
     return builder.compile()
 
@@ -317,8 +281,6 @@ def run_agent(
         "final_score": None,
         "risk_scores": None,
         "decision": None,
-        "llm_explanation": None,
-        "llm_trace": None,
         "logs": [],
         "tx_hashes": [],
         "audit_logs": [],
@@ -345,7 +307,6 @@ def run_agent(
         "business_result": result.get("business_result"),
         "mcp_result": result.get("mcp_result"),
         "risk_scores": result.get("risk_scores"),
-        "llm_explanation": result.get("llm_explanation"),
         "logs": result.get("logs"),
         "tx_hashes": result.get("tx_hashes"),
         "audit_logs": result.get("audit_logs"),

@@ -31,8 +31,6 @@ initial_state = {
     "final_score": None,
     "risk_scores": None,
     "decision": None,
-    "llm_explanation": None,
-    "llm_trace": None,
     "logs":[],
     "tx_hashes":[],
     "audit_logs":[],
