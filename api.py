@@ -24,10 +24,102 @@ class InputSchema(BaseModel):
     burn: float
     cash: float
     business_description: str = ""
+    company_stage: str = "seed"
+    arr_growth_rate: float | None = None
+    net_revenue_retention: float | None = None
+    ltv: float | None = None
+    cac: float | None = None
+    gross_margin: float | None = None
+    payback_period_months: float | None = None
+    monthly_new_customers: int = 50
+    founder_market_fit: float | None = None
+    execution_grit: float | None = None
+    tam_size_billion: float | None = None
+    market_pull: float | None = None
+    moat_score_input: float | None = None
+    market_timing: float | None = None
+    proprietary_data_score: float | None = None
+    switching_cost_score: float | None = None
+    dau_mau_ratio: float | None = None
+    thesis_alignment: float | None = None
+    traction_validation: float | None = None
+    legal_hygiene: float | None = None
+    customer_concentration_percent: float | None = None
+    cap_table_health: float | None = None
+    prototype_readiness: float | None = None
+    strategic_relationships: float | None = None
+    product_rollout: float | None = None
+    dscr: float | None = None
+    total_debt_service: float | None = None
+    current_ratio: float | None = None
+    debt_to_equity_ratio: float | None = None
+    interest_coverage_ratio: float | None = None
+    interest_expense: float | None = None
+    net_profit_margin: float | None = None
+    credit_score: float | None = None
+    years_in_business: float | None = None
+    cheque_bounces: float | None = None
+    average_bank_balance: float | None = None
+    monthly_emi: float | None = None
+    tax_compliance_score: float | None = None
+    recent_defaults: float | None = None
+    nbfc_loan_load: float | None = None
+    collateral_value: float | None = None
+    requested_loan_amount: float | None = None
+    financial_spreading_score: float | None = None
 
 
 def _build_decision_reasoning(state: dict[str, Any]) -> dict[str, Any]:
     decision = state.get("decision") or "REVIEW"
+    vc_assessment = state.get("vc_assessment")
+    startup_assessment = state.get("startup_assessment")
+    loan_assessment = state.get("loan_assessment")
+    if vc_assessment:
+        return {
+            "summary": vc_assessment.get("summary"),
+            "threshold_context": vc_assessment.get("threshold_context"),
+            "score_breakdown": {
+                "overall_score": round(float(vc_assessment.get("score", 0.0)) / 100.0, 3),
+                "financial_score": (state.get("risk_scores") or {}).get("financial_score"),
+                "unit_score": (state.get("risk_scores") or {}).get("unit_score"),
+                "business_score": (state.get("risk_scores") or {}).get("business_score"),
+                "vc_score": (state.get("risk_scores") or {}).get("vc_score"),
+            },
+            "highlights": vc_assessment.get("highlights", []),
+            "concerns": vc_assessment.get("concerns", []),
+            "diligence_checklist": vc_assessment.get("diligence_checklist", []),
+        }
+    if startup_assessment:
+        return {
+            "summary": startup_assessment.get("summary"),
+            "threshold_context": startup_assessment.get("threshold_context"),
+            "score_breakdown": {
+                "overall_score": round(float(startup_assessment.get("score", 0.0)) / 100.0, 3),
+                "financial_score": (state.get("risk_scores") or {}).get("financial_score"),
+                "unit_score": (state.get("risk_scores") or {}).get("unit_score"),
+                "business_score": (state.get("risk_scores") or {}).get("business_score"),
+                "startup_score": (state.get("risk_scores") or {}).get("startup_score"),
+            },
+            "highlights": startup_assessment.get("highlights", []),
+            "concerns": startup_assessment.get("concerns", []),
+            "diligence_checklist": startup_assessment.get("diligence_checklist", []),
+        }
+    if loan_assessment:
+        return {
+            "summary": loan_assessment.get("summary"),
+            "threshold_context": loan_assessment.get("threshold_context"),
+            "score_breakdown": {
+                "overall_score": round(float(loan_assessment.get("score", 0.0)) / 100.0, 3),
+                "financial_score": (state.get("risk_scores") or {}).get("financial_score"),
+                "unit_score": (state.get("risk_scores") or {}).get("unit_score"),
+                "business_score": (state.get("risk_scores") or {}).get("business_score"),
+                "loan_score": (state.get("risk_scores") or {}).get("loan_score"),
+            },
+            "highlights": loan_assessment.get("highlights", []),
+            "concerns": loan_assessment.get("concerns", []),
+            "diligence_checklist": loan_assessment.get("diligence_checklist", []),
+        }
+
     scores = state.get("risk_scores") or {}
     financial = state.get("financial_result") or {}
     unit = state.get("unit_result") or {}
@@ -161,12 +253,59 @@ def _format_logs(logs: list[Any]) -> list[str]:
 
 @app.post("/analyze")
 def analyze(data: InputSchema):
+    vc_profile = {
+        "company_stage": data.company_stage,
+        "arr_growth_rate": data.arr_growth_rate,
+        "net_revenue_retention": data.net_revenue_retention,
+        "payback_period_months": data.payback_period_months,
+        "founder_market_fit": data.founder_market_fit,
+        "execution_grit": data.execution_grit,
+        "tam_size_billion": data.tam_size_billion,
+        "market_pull": data.market_pull,
+        "moat_score_input": data.moat_score_input,
+        "market_timing": data.market_timing,
+        "proprietary_data_score": data.proprietary_data_score,
+        "switching_cost_score": data.switching_cost_score,
+        "dau_mau_ratio": data.dau_mau_ratio,
+        "thesis_alignment": data.thesis_alignment,
+        "traction_validation": data.traction_validation,
+        "legal_hygiene": data.legal_hygiene,
+        "customer_concentration_percent": data.customer_concentration_percent,
+        "cap_table_health": data.cap_table_health,
+        "prototype_readiness": data.prototype_readiness,
+        "strategic_relationships": data.strategic_relationships,
+        "product_rollout": data.product_rollout,
+        "dscr": data.dscr,
+        "total_debt_service": data.total_debt_service,
+        "current_ratio": data.current_ratio,
+        "debt_to_equity_ratio": data.debt_to_equity_ratio,
+        "interest_coverage_ratio": data.interest_coverage_ratio,
+        "interest_expense": data.interest_expense,
+        "net_profit_margin": data.net_profit_margin,
+        "credit_score": data.credit_score,
+        "years_in_business": data.years_in_business,
+        "cheque_bounces": data.cheque_bounces,
+        "average_bank_balance": data.average_bank_balance,
+        "monthly_emi": data.monthly_emi,
+        "tax_compliance_score": data.tax_compliance_score,
+        "recent_defaults": data.recent_defaults,
+        "nbfc_loan_load": data.nbfc_loan_load,
+        "collateral_value": data.collateral_value,
+        "requested_loan_amount": data.requested_loan_amount,
+        "financial_spreading_score": data.financial_spreading_score,
+    }
+
     result = run_agent(
         mode=data.mode,
         monthly_revenue=[data.revenue] * 12,
         monthly_burn=[data.burn] * 12,
         cash_on_hand=data.cash,
         business_description=data.business_description,
+        ltv=data.ltv,
+        cac=data.cac,
+        gross_margin=data.gross_margin or 60,
+        monthly_new_customers=data.monthly_new_customers,
+        vc_profile=vc_profile,
     )
 
     print("\n===== NEW REQUEST =====")
@@ -187,6 +326,9 @@ def analyze(data: InputSchema):
         "unit_result": state.get("unit_result"),
         "business_result": state.get("business_result"),
         "risk_scores": state.get("risk_scores"),
+        "vc_assessment": state.get("vc_assessment"),
+        "startup_assessment": state.get("startup_assessment"),
+        "loan_assessment": state.get("loan_assessment"),
         "mcp_result": state.get("mcp_result"),
         "logs": _format_logs(state.get("logs", [])),
         "tx_hashes": state.get("tx_hashes", []),

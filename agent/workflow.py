@@ -246,10 +246,11 @@ def run_agent(
     monthly_burn: list[float],
     cash_on_hand: float,
     business_description: str = "",
-    ltv: float = 900,
-    cac: float = 300,
+    ltv: float | None = None,
+    cac: float | None = None,
     gross_margin: float = 60,
     monthly_new_customers: int = 50,
+    vc_profile: dict | None = None,
 ):
     avg_revenue = sum(monthly_revenue) / len(monthly_revenue) if monthly_revenue else 0.0
     avg_burn = sum(monthly_burn) / len(monthly_burn) if monthly_burn else 0.0
@@ -257,8 +258,8 @@ def run_agent(
     gross_margin_ratio = max(min(gross_margin / 100.0, 1.0), 0.0)
 
     revenue_per_customer = avg_revenue / customer_count if customer_count else 0.0
-    derived_ltv = max(revenue_per_customer * 6.0 * gross_margin_ratio, 100.0)
-    derived_cac = max(avg_burn / customer_count, 50.0)
+    derived_ltv = max(ltv if ltv is not None else revenue_per_customer * 6.0 * gross_margin_ratio, 100.0)
+    derived_cac = max(cac if cac is not None else avg_burn / customer_count, 50.0)
 
     startup_data = {
         "monthly_revenue": monthly_revenue,
@@ -270,6 +271,8 @@ def run_agent(
         "gross_margin": gross_margin,
         "monthly_new_customers": monthly_new_customers,
     }
+    if vc_profile:
+        startup_data.update(vc_profile)
 
     initial_state: AgentState = {
         "mode": mode,
@@ -280,6 +283,9 @@ def run_agent(
         "mcp_result": None,
         "final_score": None,
         "risk_scores": None,
+        "vc_assessment": None,
+        "startup_assessment": None,
+        "loan_assessment": None,
         "decision": None,
         "logs": [],
         "tx_hashes": [],
@@ -307,6 +313,9 @@ def run_agent(
         "business_result": result.get("business_result"),
         "mcp_result": result.get("mcp_result"),
         "risk_scores": result.get("risk_scores"),
+        "vc_assessment": result.get("vc_assessment"),
+        "startup_assessment": result.get("startup_assessment"),
+        "loan_assessment": result.get("loan_assessment"),
         "logs": result.get("logs"),
         "tx_hashes": result.get("tx_hashes"),
         "audit_logs": result.get("audit_logs"),

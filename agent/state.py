@@ -15,6 +15,9 @@ class AgentState(TypedDict):
     # Aggregation
     final_score: Optional[float]
     risk_scores: Optional[Dict]
+    vc_assessment: Optional[Dict]
+    startup_assessment: Optional[Dict]
+    loan_assessment: Optional[Dict]
 
     # Final Output
     decision: Optional[str]

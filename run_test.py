@@ -30,6 +30,7 @@ initial_state = {
     "mcp_result": None,
     "final_score": None,
     "risk_scores": None,
+    "vc_assessment": None,
     "decision": None,
     "logs":[],
     "tx_hashes":[],

@@ -19,6 +19,24 @@ export default function ExplanationPanel({ result }: Props) {
           <ScoreCard title="Business" value={reasoning.score_breakdown?.business_score} />
         </div>
 
+        {reasoning.score_breakdown?.vc_score !== undefined && (
+          <div className="mb-5 max-w-xs">
+            <ScoreCard title="VC Score" value={reasoning.score_breakdown?.vc_score} />
+          </div>
+        )}
+
+        {reasoning.score_breakdown?.startup_score !== undefined && (
+          <div className="mb-5 max-w-xs">
+            <ScoreCard title="Startup Score" value={reasoning.score_breakdown?.startup_score} />
+          </div>
+        )}
+
+        {reasoning.score_breakdown?.loan_score !== undefined && (
+          <div className="mb-5 max-w-xs">
+            <ScoreCard title="Loan Score" value={reasoning.score_breakdown?.loan_score} />
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <h3 className="font-semibold text-gray-900 mb-2">Why It Works</h3>
@@ -38,6 +56,17 @@ export default function ExplanationPanel({ result }: Props) {
             </ul>
           </div>
         </div>
+
+        {reasoning.diligence_checklist && reasoning.diligence_checklist.length > 0 && (
+          <div className="mt-6">
+            <h3 className="font-semibold text-gray-900 mb-2">Review Checklist</h3>
+            <ul className="list-disc ml-6 text-gray-800 space-y-1">
+              {reasoning.diligence_checklist.map((item: string, i: number) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     ) : null
   );

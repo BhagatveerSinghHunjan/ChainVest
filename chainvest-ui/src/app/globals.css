@@ -33,10 +33,10 @@ body {
 }
 
 .brand-wordmark {
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-size: clamp(1.5rem, 2vw, 1.9rem);
-  font-weight: 800;
-  letter-spacing: -0.05em;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: clamp(1.4rem, 1.8vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1;
   color: #111827;
   text-wrap: balance;
