@@ -81,6 +81,7 @@ fn score_business_description(description: &str) -> (String, f64, f64, f64, f64,
             + if ["large market", "growing market", "global", "regulated", "mission-critical"].iter().any(|token| text.contains(token)) { 0.18 } else { 0.0 }
             + if ["enterprise", "mid-market", "compliance"].iter().any(|token| text.contains(token)) { 0.08 } else { 0.0 }
     );
+    
 
     let moat_score = clamp_score(
         0.35
